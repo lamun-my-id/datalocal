@@ -1,7 +1,7 @@
 import 'dart:async';
 
-import 'package:data_state/data_state.dart';
-import 'package:data_state/utils/date_time.dart';
+import 'package:datalocal/datalocal.dart';
+import 'package:datalocal/utils/date_time.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -35,7 +35,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  late DataState state;
+  late DataLocal state;
   List<DataItem> data = [];
   bool loading = true;
   DataItem? selectedData;
@@ -50,7 +50,7 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future initialize() async {
-    state = await DataState.create(
+    state = await DataLocal.create(
       "notes",
       onRefresh: () {
         print("object-handle");

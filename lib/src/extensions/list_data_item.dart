@@ -80,65 +80,55 @@ extension ListDataItem on List<DataItem> {
               }
               break;
             case DataFilterOperator.isGreaterThanOrEqualTo:
-              switch (f.value.runtimeType) {
-                case DateTime:
-                  if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
-                  } else {
-                    i.add(index);
-                  }
-                  break;
-                default:
-                  if (d.get(f.key) >= f.value) {
-                  } else {
-                    i.add(index);
-                  }
+              if (f.value.runtimeType == DateTime) {
+                if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
+                } else {
+                  i.add(index);
+                }
+              } else {
+                if (d.get(f.key) >= f.value) {
+                } else {
+                  i.add(index);
+                }
               }
               break;
             case DataFilterOperator.isGreaterThan:
-              switch (f.value.runtimeType) {
-                case DateTime:
-                  if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
-                  } else {
-                    i.add(index);
-                  }
-                  break;
-                default:
-                  if (d.get(f.key) > f.value) {
-                  } else {
-                    i.add(index);
-                  }
+              if (f.value.runtimeType == DateTime) {
+                if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
+                } else {
+                  i.add(index);
+                }
+              } else {
+                if (d.get(f.key) > f.value) {
+                } else {
+                  i.add(index);
+                }
               }
               break;
             case DataFilterOperator.isLessThanOrEqualTo:
-              switch (f.value.runtimeType) {
-                case DateTime:
-                  if ((d.get(f.key) as DateTime)
-                      .isBefore(f.value as DateTime)) {
-                  } else {
-                    i.add(index);
-                  }
-                  break;
-                default:
-                  if (d.get(f.key) <= f.value) {
-                  } else {
-                    i.add(index);
-                  }
+              if (f.value.runtimeType == DateTime) {
+                if ((d.get(f.key) as DateTime).isBefore(f.value as DateTime)) {
+                } else {
+                  i.add(index);
+                }
+              } else {
+                if (d.get(f.key) <= f.value) {
+                } else {
+                  i.add(index);
+                }
               }
               break;
             case DataFilterOperator.isLessThan:
-              switch (f.value.runtimeType) {
-                case DateTime:
-                  if ((d.get(f.key) as DateTime)
-                      .isBefore(f.value as DateTime)) {
-                  } else {
-                    i.add(index);
-                  }
-                  break;
-                default:
-                  if (d.get(f.key) < f.value) {
-                  } else {
-                    i.add(index);
-                  }
+              if (f.value.runtimeType == DateTime) {
+                if ((d.get(f.key) as DateTime).isBefore(f.value as DateTime)) {
+                } else {
+                  i.add(index);
+                }
+              } else {
+                if (d.get(f.key) < f.value) {
+                } else {
+                  i.add(index);
+                }
               }
               break;
             case DataFilterOperator.whereIn:
@@ -247,15 +237,15 @@ dynamic _getValueFromMap(List<String> fields, Map<String, dynamic> data) {
   Map<String, dynamic> param = data;
   dynamic value;
   for (int i = 0; i < fields.length; i++) {
-    if (fields.isNotEmpty) {
-      if (i == fields.length - 1) {
-        value = param[fields[i]];
-      } else {
-        param = (param[fields[i]] ?? {}) ?? {};
-      }
+    // if (fields.isNotEmpty) {
+    if (i == fields.length - 1) {
+      value = param[fields[i]];
     } else {
-      value = data[fields];
+      param = (param[fields[i]] ?? {}) ?? {};
     }
+    // } else {
+    //   value = data[fields[i]];
+    // }
   }
 
   return value;

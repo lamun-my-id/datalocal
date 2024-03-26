@@ -323,24 +323,24 @@ class DataLocal {
   }
 }
 
-dynamic _listDataItemAddUpdate(List<dynamic> args) {
-  // _log('_listDataItemAddUpdate start');
-  List<DataItem> result = args[1];
-  DataItem newData = args[2];
+// dynamic _listDataItemAddUpdate(List<dynamic> args) {
+//   // _log('_listDataItemAddUpdate start');
+//   List<DataItem> result = args[1];
+//   DataItem newData = args[2];
 
-  int index = result.indexWhere((element) => element.id == newData.id);
-  if (index >= 0) {
-    result[index] = newData;
-  } else {
-    result.insert(0, newData);
-  }
-  if (kIsWeb) {
-    return {"data": result, "count": result.length};
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, {"data": result, "count": result.length});
-  }
-}
+//   int index = result.indexWhere((element) => element.id == newData.id);
+//   if (index >= 0) {
+//     result[index] = newData;
+//   } else {
+//     result.insert(0, newData);
+//   }
+//   if (kIsWeb) {
+//     return {"data": result, "count": result.length};
+//   } else {
+//     SendPort port = args[0];
+//     Isolate.exit(port, {"data": result, "count": result.length});
+//   }
+// }
 
 dynamic _jsonToListDataItem(List<dynamic> args) {
   // _log('_jsonToListDataItem start');

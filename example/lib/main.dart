@@ -53,14 +53,14 @@ class _MyHomePageState extends State<MyHomePage> {
     state = await DataLocal.create(
       "notes",
       onRefresh: () {
-        print("object-handle");
+        // print("object-handle");
         setState(() {});
       },
       // debugMode: true,
     );
     state.onRefresh = () {
       data = state.data;
-      print("object data length ${data.length}");
+      // print("object data length ${data.length}");
       setState(() {});
     };
     state.refresh();

@@ -1,25 +1,25 @@
 import 'dart:convert';
 import 'dart:isolate';
 
-import 'package:data_state/src/extensions/list_data_item.dart';
-import 'package:data_state/src/models/data_filter.dart';
-import 'package:data_state/src/models/data_item.dart';
-import 'package:data_state/src/models/data_search.dart';
-import 'package:data_state/src/models/data_sort.dart';
-import 'package:data_state/utils/date_time.dart';
-import 'package:data_state/utils/encrypt.dart';
+import 'package:datalocal/src/extensions/list_data_item.dart';
+import 'package:datalocal/src/models/data_filter.dart';
+import 'package:datalocal/src/models/data_item.dart';
+import 'package:datalocal/src/models/data_search.dart';
+import 'package:datalocal/src/models/data_sort.dart';
+import 'package:datalocal/utils/date_time.dart';
+import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter/foundation.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class DataState {
+class DataLocal {
   final String stateName;
   final List<DataFilter>? filters;
   final List<DataSort>? sorts;
   Function()? onRefresh;
   final bool debugMode;
 
-  DataState(
+  DataLocal(
     this.stateName, {
     this.filters,
     this.sorts,
@@ -28,14 +28,14 @@ class DataState {
   });
 
   // Static Func
-  static Future<DataState> create(
+  static Future<DataLocal> create(
     String stateName, {
     List<DataFilter> filters = const [],
     List<DataSort> sorts = const [],
     Function()? onRefresh,
     bool? debugMode,
   }) async {
-    DataState result = DataState(
+    DataLocal result = DataLocal(
       stateName,
       filters: filters,
       sorts: sorts,
@@ -61,7 +61,7 @@ class DataState {
 
   _log(dynamic arg) async {
     if (debugMode) {
-      debugPrint('DataState (Debug): ${arg.toString()}');
+      debugPrint('DataLocal (Debug): ${arg.toString()}');
     }
   }
 
@@ -70,9 +70,11 @@ class DataState {
     try {
       try {
         initializeDateFormatting();
-      } catch (e) {}
+      } catch (e) {
+        //
+      }
       _name = EncryptUtil().encript(
-        "DataState-$stateName",
+        "DataLocal-$stateName",
       );
       try {
         String? res;
@@ -356,7 +358,7 @@ dynamic _jsonToListDataItem(List<dynamic> args) {
       Isolate.exit(port, {"data": result, "count": count});
     }
   } catch (e) {
-    print(args[1]);
+    // print(args[1]);
   }
 }
 

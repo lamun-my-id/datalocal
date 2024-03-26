@@ -1,4 +1,4 @@
-import 'package:data_state/src/models/data_item.dart';
+import 'package:datalocal/src/models/data_item.dart';
 
 class DataSearch {
   List<String>? keys;

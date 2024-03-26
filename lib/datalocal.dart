@@ -1,4 +1,4 @@
-library data_state;
+library datalocal;
 
 export 'src/index.dart';
 export 'src/models/data_item.dart';

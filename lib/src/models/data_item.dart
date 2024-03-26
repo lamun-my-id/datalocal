@@ -1,4 +1,4 @@
-import 'package:data_state/utils/date_time.dart';
+import 'package:datalocal/utils/date_time.dart';
 
 class DataItem {
   String id;
@@ -63,10 +63,12 @@ class DataItem {
     };
   }
 
-  Future<void> updateForce(Map<Object, dynamic> value) async {
-    try {
-      data = {...data, ...Map<String, dynamic>.from(value)};
-    } catch (e) {}
-    data['updatedAt'] = DateTime.now();
-  }
+  // Future<void> updateForce(Map<Object, dynamic> value) async {
+  //   try {
+  //     data = {...data, ...Map<String, dynamic>.from(value)};
+  //   } catch (e) {
+  //     //
+  //   }
+  //   data['updatedAt'] = DateTime.now();
+  // }
 }

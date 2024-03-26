@@ -1,8 +1,8 @@
-import 'package:data_state/src/extensions/list.dart';
-import 'package:data_state/src/models/data_filter.dart';
-import 'package:data_state/src/models/data_item.dart';
-import 'package:data_state/src/models/data_search.dart';
-import 'package:data_state/src/models/data_sort.dart';
+import 'package:datalocal/src/extensions/list.dart';
+import 'package:datalocal/src/models/data_filter.dart';
+import 'package:datalocal/src/models/data_item.dart';
+import 'package:datalocal/src/models/data_search.dart';
+import 'package:datalocal/src/models/data_sort.dart';
 
 extension ListDataItem on List<DataItem> {
   List<DataItem> sortData(List<DataSort> parameters) {

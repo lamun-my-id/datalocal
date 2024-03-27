@@ -14,20 +14,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class DataLocal {
   final String stateName;
-  final List<DataFilter>? filters;
-  final List<DataSort>? sorts;
+  // final List<DataFilter>? filters;
+  // final List<DataSort>? sorts;
   Function()? onRefresh;
-  final bool debugMode;
+  final bool _debugMode;
 
   DataLocal(
     this.stateName, {
-    this.filters,
-    this.sorts,
+    // this.filters,
+    // this.sorts,
     this.onRefresh,
-    this.debugMode = false,
-  });
+    bool debugMode = false,
+  }) : _debugMode = debugMode;
 
   // Static Func
+  /// Used for the first time initialize [DataLocal]
   static Future<DataLocal> create(
     String stateName, {
     List<DataFilter> filters = const [],
@@ -37,8 +38,8 @@ class DataLocal {
   }) async {
     DataLocal result = DataLocal(
       stateName,
-      filters: filters,
-      sorts: sorts,
+      // filters: filters,
+      // sorts: sorts,
       onRefresh: onRefresh,
       debugMode: debugMode ?? false,
     );
@@ -50,22 +51,22 @@ class DataLocal {
   bool isInit = false;
   bool isLoading = false;
   int count = 0;
-  int? searchCount;
   List<DataItem> data = [];
-  List<DataItem>? search;
-  late DateTime lastNewestCheck;
-  late DateTime lastUpdateCheck;
+  // late DateTime _lastNewestCheck;
+  // late DateTime _lastUpdateCheck;
   // Local Variable Private
   late String _name;
-  int size = 200;
+  final int _size = 200;
 
+  /// Log DataLocal used on debugMode
   _log(dynamic arg) async {
-    if (debugMode) {
+    if (_debugMode) {
       debugPrint('DataLocal (Debug): ${arg.toString()}');
     }
   }
 
   // Function
+  /// Used to initialize DataLocal
   _initialize() async {
     try {
       try {
@@ -109,7 +110,7 @@ class DataLocal {
           //
         }
         count = data.length;
-        if (count == 0 || count == size) {
+        if (count == 0 || count == _size) {
           _loadState();
         }
       } catch (e) {
@@ -123,11 +124,12 @@ class DataLocal {
     }
   }
 
+  /// Used to save state data to shared preferences
   Future<void> _saveState() async {
     isLoading = true;
     refresh();
-    int loop = (count / size).ceil();
-    _log('state akan dibuat ${loop + 1} ($count/$size)');
+    int loop = (count / _size).ceil();
+    _log('state akan dibuat ${loop + 1} ($count/$_size)');
     for (int i = 0; i < loop; i++) {
       _log("start savestate number : ${i + 1}");
       SharedPreferences prefs;
@@ -136,14 +138,14 @@ class DataLocal {
         try {
           if (kIsWeb) {
             String res = _listDataItemToJson(
-                [null, data.skip(i * size).take(size).toList()]);
+                [null, data.skip(i * _size).take(_size).toList()]);
             // _log((await rPort.first as String).length);
             prefs.setString(EncryptUtil().encript("$_name-$i"), res);
           } else {
             ReceivePort rPort = ReceivePort();
             _log("Isolate spawn");
             await Isolate.spawn(_listDataItemToJson,
-                [rPort.sendPort, data.skip(i * size).take(size).toList()]);
+                [rPort.sendPort, data.skip(i * _size).take(_size).toList()]);
             // _log((await rPort.first as String).length);
             String value = await rPort.first as String;
             prefs.setString(EncryptUtil().encript("$_name-$i"), value);
@@ -163,6 +165,7 @@ class DataLocal {
     refresh();
   }
 
+  /// Used to load state data from shared preferences
   Future<void> _loadState() async {
     // _log("start loadstate");
     isLoading = true;
@@ -198,11 +201,14 @@ class DataLocal {
     }
     data = result;
     count = data.length;
-    data = await find(sorts: sorts);
+    data = await find(
+        // sorts: sorts
+        );
     isLoading = false;
     refresh();
   }
 
+  /// Used to delete state data from shared preferences
   Future<void> _deleteState() async {
     isLoading = true;
     refresh();
@@ -221,11 +227,14 @@ class DataLocal {
     }
     data = result;
     count = data.length;
-    data = await find(sorts: sorts);
+    data = await find(
+        // sorts: sorts
+        );
     isLoading = false;
     refresh();
   }
 
+  /// Refresh data, launch if onRefresh is include
   refresh() {
     if (onRefresh != null) {
       _log("refresh berjalan");
@@ -237,6 +246,7 @@ class DataLocal {
 
   void dispose() {}
 
+  /// Find More Efective Data with this function
   Future<List<DataItem>> find({
     List<DataFilter>? filters,
     List<DataSort>? sorts,
@@ -260,26 +270,33 @@ class DataLocal {
     return res['data'];
   }
 
-  Future<DataItem> insertOne(Map<String, dynamic> value) async {
-    String id = EncryptUtil().encript(
-        DateTimeUtils.dateFormat(DateTime.now(), format: 'yyyyMMddhhmmss') ??
-            "");
-    _log(id);
+  /// Insert and save DataItem
+  Future<DataItem> insertOne(Map<String, dynamic> value, {String? id}) async {
+    // String id = EncryptUtil().encript(
+    //     DateTimeUtils.dateFormat(DateTime.now(), format: 'yyyyMMddhhmmss') ??
+    //         "");
+    // _log(id);
     DataItem newData = DataItem(
-      id: id,
+      id: id ??
+          EncryptUtil().encript(DateTimeUtils.dateFormat(DateTime.now(),
+                  format: 'yyyyMMddhhmmss') ??
+              ""),
       data: value,
       parent: stateName,
     );
     try {
       data.insert(0, newData);
       refresh();
-      find(sorts: sorts).then((value) async {
+      find(
+              // sorts: sorts
+              )
+          .then((value) async {
         data = value;
         count = data.length;
         refresh();
         _log("start save state");
         await _saveState();
-        _log("start save berhasil");
+        _log("start save success");
       });
     } catch (e) {
       _log("error disini");
@@ -288,7 +305,9 @@ class DataLocal {
     return newData;
   }
 
-  Future<DataItem> updateOne(String id, Map<String, dynamic> value) async {
+  /// Update to save DataItem
+  Future<DataItem> updateOne(String id,
+      {required Map<String, dynamic> value}) async {
     try {
       Map<String, dynamic> res = {};
       if (kIsWeb) {
@@ -301,6 +320,7 @@ class DataLocal {
         rPort.close();
       }
       data = res['data'];
+      count = data.length;
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
@@ -316,6 +336,28 @@ class DataLocal {
     return d.first;
   }
 
+  Future<void> deleteOne(String id) async {
+    try {
+      Map<String, dynamic> res = {};
+      if (kIsWeb) {
+        res = _listDataItemDelete([null, data, id]);
+      } else {
+        ReceivePort rPort = ReceivePort();
+        await Isolate.spawn(_listDataItemDelete, [rPort.sendPort, data, id]);
+        res = await rPort.first;
+        rPort.close();
+      }
+      data = res['data'];
+      count = data.length;
+    } catch (e, st) {
+      _log('findAsync Isolate.spawn $e, $st');
+    }
+
+    refresh();
+    _saveState();
+  }
+
+  /// Start from initialize, save state will not deleted
   Future<void> reboot() async {
     await _deleteState();
     data.clear();
@@ -342,6 +384,7 @@ class DataLocal {
 //   }
 // }
 
+/// Convert Json to List<DataItem>
 dynamic _jsonToListDataItem(List<dynamic> args) {
   // _log('_jsonToListDataItem start');
   try {
@@ -362,6 +405,7 @@ dynamic _jsonToListDataItem(List<dynamic> args) {
   }
 }
 
+/// Update List DataItem
 dynamic _listDataItemUpdate(List<dynamic> args) {
   List<DataItem> result = args[1];
   String id = args[2];
@@ -380,6 +424,25 @@ dynamic _listDataItemUpdate(List<dynamic> args) {
   }
 }
 
+/// Delete List DataItem
+dynamic _listDataItemDelete(List<dynamic> args) {
+  List<DataItem> result = args[1];
+  String id = args[2];
+
+  int i = result.indexWhere((element) => element.id == id);
+  if (i >= 0) {
+    result.removeAt(i);
+  }
+
+  if (kIsWeb) {
+    return {"data": result, "count": result.length};
+  } else {
+    SendPort port = args[0];
+    Isolate.exit(port, {"data": result, "count": result.length});
+  }
+}
+
+/// Find List DataItem
 dynamic _listDataItemFind(List<dynamic> args) {
   // _log('_listDataItemFind start');
 
@@ -406,6 +469,7 @@ dynamic _listDataItemFind(List<dynamic> args) {
   }
 }
 
+/// Convert List<DataItem> to json
 dynamic _listDataItemToJson(List<dynamic> args) {
   // _log('_listDataItemModelToJson start');
   String result = jsonEncode(

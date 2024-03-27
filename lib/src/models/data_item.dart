@@ -7,6 +7,7 @@ class DataItem {
   String parent;
   bool isLoading = false;
 
+  /// Used by [DataLocal] data
   DataItem({
     required this.id,
     required this.data,

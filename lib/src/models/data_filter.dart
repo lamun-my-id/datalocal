@@ -12,6 +12,9 @@ enum DataFilterOperator {
   isNull
 }
 
+/// Used to filter [DataLocal] data [key] is the index of map
+/// Used separated with dot '.' to sort data inside map variable
+/// Use [operator] to filter more flexible
 class DataFilter {
   String key;
   dynamic value;
@@ -22,17 +25,6 @@ class DataFilter {
     this.operator = DataFilterOperator.isEqualTo,
     this.value = "",
   });
-
-  static List<Map<String, String>> listOperator = [
-    {"id": "=", "name": "[=] sama dengan"},
-    {"id": "!=", "name": "[!=] tidak sama dengan"},
-    {"id": ">=", "name": "[>=] lebih besar dari sama dengan"},
-    {"id": ">", "name": "[>] lebih besar dari"},
-    {"id": "<=", "name": "[<=] kurang dari sama dengan"},
-    {"id": "<", "name": "[<] kurang dari"},
-    {"id": "in", "name": "[in] dalam list"},
-    {"id": "nin", "name": "[nin] tidak dalam list"}
-  ];
 
   String operatorInText() {
     switch (operator) {

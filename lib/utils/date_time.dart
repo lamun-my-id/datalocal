@@ -1,15 +1,8 @@
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 
 class DateTimeUtils {
-  /// Initialize untuk mendapatkan format tanggal lokal
-  static Future initialize() async {
-    await initializeDateFormatting();
-  }
-
-  /// mengembalikan dateformat berdasarkan local date format
-  /// isi [tanggal] dengan DateTime atau TimeStamp
-  /// [format] default =  dd MMMM yyyy , hasil : 12 Juni 2002
+  /// Return fomatted date by local
+  /// [format] default =  dd MMMM yyyy , output : 12 Juni 2002
   static String? dateFormat(dynamic tanggal,
       {String format = 'dd MMMM yyyy',
       String locale = 'id',
@@ -26,8 +19,7 @@ class DateTimeUtils {
     return hasil;
   }
 
-  /// Mengembalikan Durasi perbandingan antara [tanggala] dan [tanggalb]
-  /// Isi [tanggala] maupun [tanggalb] dengan DateTime ataupun TimeStamp
+  /// Return diff time
   static Duration differenceTime(dynamic tanggalAwal, dynamic tanggalAkhir) {
     DateTime awal, akhir;
 
@@ -47,6 +39,7 @@ class DateTimeUtils {
     return duration;
   }
 
+  /// Return convert string to date
   static DateTime? toDateTime(dynamic tanggal) {
     if (tanggal is String) {
       return DateTime.tryParse(tanggal);

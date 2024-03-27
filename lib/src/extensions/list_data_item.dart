@@ -5,6 +5,7 @@ import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
 
 extension ListDataItem on List<DataItem> {
+  /// Part Extension of [List<DataItem>] to sort data
   List<DataItem> sortData(List<DataSort> parameters) {
     if (parameters.isNotEmpty) {
       List<List<DataItem>> temp = [this];
@@ -58,6 +59,7 @@ extension ListDataItem on List<DataItem> {
     return this;
   }
 
+  /// Part Extension of [List<DataItem>] to filter data
   List<DataItem> filterData(List<DataFilter> parameters) {
     List<DataItem> result = [];
     result.addAll(this);
@@ -193,6 +195,7 @@ extension ListDataItem on List<DataItem> {
     return result;
   }
 
+  /// Part Extension of [List<DataItem>] to search data
   List<DataItem> searchData(DataSearch parameter) {
     if (parameter.builder == null &&
         (parameter.keys == null && parameter.value == null)) {

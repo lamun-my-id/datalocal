@@ -1,7 +1,7 @@
 name: datalocal
-description: "Flutter local data saved with state."
+description: "Flutter dependency to save data via local saved with state, easy to use and fast."
 repository: "https://github.com/lamun-my-id/datalocal.git"
-version: 1.0.0+2
+version: 1.0.1
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -10,10 +10,9 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.6
   intl: ^0.19.0
-  encrypt: 5.0.1
   shared_preferences: ^2.2.2
+  pointycastle: ^3.7.4
 
 dev_dependencies:
   flutter_test:

@@ -336,6 +336,7 @@ class DataLocal {
     return d.first;
   }
 
+  /// Deletion DataItem
   Future<void> deleteOne(String id) async {
     try {
       Map<String, dynamic> res = {};

@@ -13,19 +13,21 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DataLocal {
-  final String stateName;
+  final String _stateName;
+  String get stateName => _stateName;
   // final List<DataFilter>? filters;
   // final List<DataSort>? sorts;
   Function()? onRefresh;
   final bool _debugMode;
 
   DataLocal(
-    this.stateName, {
+    String stateName, {
     // this.filters,
     // this.sorts,
     this.onRefresh,
     bool debugMode = false,
-  }) : _debugMode = debugMode;
+  })  : _debugMode = debugMode,
+        _stateName = stateName;
 
   // Static Func
   /// Used for the first time initialize [DataLocal]
@@ -48,10 +50,17 @@ class DataLocal {
   }
 
   // Local Variable
-  bool isInit = false;
-  bool isLoading = false;
-  int count = 0;
-  List<DataItem> data = [];
+  bool _isInit = false;
+  bool get isInit => _isInit;
+
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+
+  int _count = 0;
+  int get count => _count;
+
+  List<DataItem> _data = [];
+  List<DataItem> get data => _data;
   // late DateTime _lastNewestCheck;
   // late DateTime _lastUpdateCheck;
   // Local Variable Private
@@ -87,36 +96,36 @@ class DataLocal {
         }
 
         if (res == null) {
-          data = [];
+          _data = [];
           throw "tidak ada state (${EncryptUtil().encript("$_name-0")})";
         }
         try {
           if (kIsWeb) {
             Map<String, dynamic> value = _jsonToListDataItem([null, res]);
             data.addAll(value['data']);
-            count = data.length;
+            _count = data.length;
           } else {
             ReceivePort rPort = ReceivePort();
             await Isolate.spawn(_jsonToListDataItem, [rPort.sendPort, res]);
             Map<String, dynamic> value = await rPort.first;
             data.addAll(value['data']);
-            count = data.length;
+            _count = data.length;
             rPort.close();
           }
-          isInit = true;
+          _isInit = true;
           refresh();
         } catch (e) {
           _log("initialize error(3) : $e");
           //
         }
-        count = data.length;
+        _count = data.length;
         if (count == 0 || count == _size) {
           _loadState();
         }
       } catch (e) {
         _log("initialize error(2)#$stateName : $e");
       }
-      isInit = true;
+      _isInit = true;
       refresh();
     } catch (e) {
       _log("initialize error(1) : $e");
@@ -126,11 +135,11 @@ class DataLocal {
 
   /// Used to save state data to shared preferences
   Future<void> _saveState() async {
-    isLoading = true;
+    _isLoading = true;
     refresh();
     int loop = (count / _size).ceil();
     _log('state akan dibuat ${loop + 1} ($count/$_size)');
-    for (int i = 0; i < loop; i++) {
+    for (int i = 0; i < loop + 1; i++) {
       _log("start savestate number : ${i + 1}");
       SharedPreferences prefs;
       try {
@@ -161,14 +170,14 @@ class DataLocal {
         _log("pref null");
       }
     }
-    isLoading = false;
+    _isLoading = false;
     refresh();
   }
 
   /// Used to load state data from shared preferences
   Future<void> _loadState() async {
     // _log("start loadstate");
-    isLoading = true;
+    _isLoading = true;
     refresh();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     int i = 0;
@@ -199,18 +208,18 @@ class DataLocal {
         lanjut = false;
       }
     }
-    data = result;
-    count = data.length;
-    data = await find(
+    _data = result;
+    _count = data.length;
+    _data = await find(
         // sorts: sorts
         );
-    isLoading = false;
+    _isLoading = false;
     refresh();
   }
 
   /// Used to delete state data from shared preferences
   Future<void> _deleteState() async {
-    isLoading = true;
+    _isLoading = true;
     refresh();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     int i = 0;
@@ -225,12 +234,12 @@ class DataLocal {
         lanjut = false;
       }
     }
-    data = result;
-    count = data.length;
-    data = await find(
+    _data = result;
+    _count = data.length;
+    _data = await find(
         // sorts: sorts
         );
-    isLoading = false;
+    _isLoading = false;
     refresh();
   }
 
@@ -291,8 +300,8 @@ class DataLocal {
               // sorts: sorts
               )
           .then((value) async {
-        data = value;
-        count = data.length;
+        _data = value;
+        _count = data.length;
         refresh();
         _log("start save state");
         await _saveState();
@@ -319,8 +328,8 @@ class DataLocal {
         res = await rPort.first;
         rPort.close();
       }
-      data = res['data'];
-      count = data.length;
+      _data = res['data'];
+      _count = data.length;
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
@@ -348,8 +357,8 @@ class DataLocal {
         res = await rPort.first;
         rPort.close();
       }
-      data = res['data'];
-      count = data.length;
+      _data = res['data'];
+      _count = data.length;
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
@@ -361,7 +370,7 @@ class DataLocal {
   /// Start from initialize, save state will not deleted
   Future<void> reboot() async {
     await _deleteState();
-    data.clear();
+    _data.clear();
     await _initialize();
   }
 }

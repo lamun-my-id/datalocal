@@ -1,4 +1,9 @@
 ## 1.0.2
+* fix variable
+* fix deletion
+* add bug
+
+## 1.0.2
 * Add createdAt
 * fix variable
 

@@ -92,12 +92,54 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   edit() async {
-    await state.updateOne(selectedData!.id, {
+    await state.updateOne(selectedData!.id, value: {
       "title": titleController.text,
       "content": contentController.text,
       "updatedAt": DateTime.now(),
     });
     setState(() {});
+  }
+
+  delete() async {
+    bool rmv = (await showDialog<bool?>(
+          context: context,
+          builder: (_) {
+            return AlertDialog(
+              title: const Text('Delete this note'),
+              content: const Text(
+                'This action cannot be undone',
+              ),
+              actions: <Widget>[
+                TextButton(
+                  style: TextButton.styleFrom(
+                    textStyle: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  child: const Text('Delete'),
+                  onPressed: () {
+                    Navigator.of(context).pop(true);
+                  },
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(
+                    textStyle: Theme.of(context).textTheme.labelLarge,
+                  ),
+                  child: const Text('Cancel'),
+                  onPressed: () {
+                    Navigator.of(context).pop(false);
+                  },
+                ),
+              ],
+            );
+          },
+        )) ??
+        false;
+    if (rmv) {
+      await state.deleteOne(selectedData!.id);
+      selectedData = null;
+      titleController.clear();
+      contentController.clear();
+      setState(() {});
+    }
   }
 
   @override
@@ -124,7 +166,6 @@ class _MyHomePageState extends State<MyHomePage> {
                   }
                   return Column(
                     children: [
-                      // Text("${state.data.length} data"),
                       Expanded(
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(
@@ -216,7 +257,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 vertical: 16,
                               ),
                               child: const Text(
-                                "Judul Catatan",
+                                "Title",
                                 style: TextStyle(
                                   fontSize: 18,
                                 ),
@@ -234,7 +275,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 vertical: 16,
                               ),
                               child: const Text(
-                                "Isi",
+                                "Content",
                                 style: TextStyle(
                                   fontSize: 18,
                                 ),
@@ -263,6 +304,29 @@ class _MyHomePageState extends State<MyHomePage> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
+                          if (selectedData != null)
+                            InkWell(
+                              onTap: () => delete(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "Delete",
+                                  style: TextStyle(
+                                      // color: Colors.white,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          const SizedBox(
+                            width: 16,
+                          ),
                           InkWell(
                             onTap: () => save(),
                             child: Container(

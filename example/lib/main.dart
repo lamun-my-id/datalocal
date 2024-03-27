@@ -75,6 +75,13 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {});
   }
 
+  closeForm() {
+    selectedData = null;
+    titleController.text = "";
+    contentController.text = "";
+    setState(() {});
+  }
+
   save() async {
     if (selectedData != null) {
       edit();
@@ -318,6 +325,27 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ),
                                 child: const Text(
                                   "Delete",
+                                  style: TextStyle(
+                                      // color: Colors.white,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          const Expanded(child: SizedBox()),
+                          if (selectedData != null)
+                            InkWell(
+                              onTap: () => closeForm(),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  "Cancel",
                                   style: TextStyle(
                                       // color: Colors.white,
                                       ),

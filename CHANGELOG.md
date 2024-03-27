@@ -1,6 +1,9 @@
+## 1.0.2
+* Add createdAt
+* fix variable
+
 ## 1.0.1
 * delete data
-
 
 ## 1.0.0+2
 * fix data saved

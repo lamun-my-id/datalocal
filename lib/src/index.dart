@@ -31,8 +31,8 @@ class DataLocal {
   /// Used for the first time initialize [DataLocal]
   static Future<DataLocal> create(
     String stateName, {
-    List<DataFilter> filters = const [],
-    List<DataSort> sorts = const [],
+    // List<DataFilter> filters = const [],
+    // List<DataSort> sorts = const [],
     Function()? onRefresh,
     bool? debugMode,
   }) async {
@@ -276,12 +276,12 @@ class DataLocal {
     //     DateTimeUtils.dateFormat(DateTime.now(), format: 'yyyyMMddhhmmss') ??
     //         "");
     // _log(id);
-    DataItem newData = DataItem(
-      id: id ??
+    DataItem newData = DataItem.create(
+      id ??
           EncryptUtil().encript(DateTimeUtils.dateFormat(DateTime.now(),
                   format: 'yyyyMMddhhmmss') ??
               ""),
-      data: value,
+      value: value,
       parent: stateName,
     );
     try {
@@ -414,7 +414,7 @@ dynamic _listDataItemUpdate(List<dynamic> args) {
 
   int i = result.indexWhere((element) => element.id == id);
   if (i >= 0) {
-    result[i].data = {...result[i].data, ...update};
+    result[i].update(update);
   }
 
   if (kIsWeb) {

@@ -396,22 +396,22 @@ class DataLocal {
 
 /// Convert Json to List<DataItem>
 dynamic _jsonToListDataItem(List<dynamic> args) {
-  // _log('_jsonToListDataItem start');
+  List<DataItem> result = [];
+  int count = 0;
   try {
-    List<DataItem> result = List<Map<String, dynamic>>.from(
+    result = List<Map<String, dynamic>>.from(
             jsonDecode(EncryptUtil().decript(args[1])))
         .map((e) => DataItem.fromMap(e))
         .toList();
-    int count = result.length;
-    // _log(count.toString());
-    if (kIsWeb) {
-      return {"data": result, "count": count};
-    } else {
-      SendPort port = args[0];
-      Isolate.exit(port, {"data": result, "count": count});
-    }
+    count = result.length;
   } catch (e) {
     // print(args[1]);
+  }
+  if (kIsWeb) {
+    return {"data": result, "count": count};
+  } else {
+    SendPort port = args[0];
+    Isolate.exit(port, {"data": result, "count": count});
   }
 }
 
@@ -483,9 +483,7 @@ dynamic _listDataItemFind(List<dynamic> args) {
 dynamic _listDataItemToJson(List<dynamic> args) {
   // _log('_listDataItemModelToJson start');
   String result = jsonEncode(
-    (args[1] as List<DataItem>)
-        .map((e) => {"id": e.id, "data": e.data, "parent": e.parent})
-        .toList(),
+    (args[1] as List<DataItem>).map((e) => e.toMap()).toList(),
     toEncodable: (_) {
       // if (_ is Timestamp) {
       //   return DateTimeUtils.toDateTime(_).toString();

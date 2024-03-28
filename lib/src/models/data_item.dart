@@ -49,7 +49,7 @@ class DataItem {
     result._id = value['id'] ?? "";
     result._data = data;
     result._parent = value['parent'] ?? "";
-    result._createdAt = data["createdAt"];
+    result._createdAt = data["createdAt"] ?? DateTime.now();
     result._updatedAt = data["updatedAt"];
 
     return result;

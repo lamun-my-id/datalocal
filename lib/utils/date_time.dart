@@ -1,24 +1,4 @@
-import 'package:intl/intl.dart';
-
 class DateTimeUtils {
-  /// Return fomatted date by local
-  /// [format] default =  dd MMMM yyyy , output : 12 Juni 2002
-  static String? dateFormat(dynamic tanggal,
-      {String format = 'dd MMMM yyyy',
-      String locale = 'id',
-      Duration? addDuration}) {
-    String? hasil;
-
-    DateTime? date = toDateTime(tanggal);
-    if (date != null) {
-      if (addDuration != null) {
-        date = date.add(addDuration);
-      }
-      hasil = DateFormat(format, locale).format(date).toString();
-    }
-    return hasil;
-  }
-
   /// Return diff time
   static Duration differenceTime(dynamic tanggalAwal, dynamic tanggalAkhir) {
     DateTime awal, akhir;

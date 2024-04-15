@@ -1,3 +1,7 @@
+## 1.0.5
+* fix date required
+* fix other requirements
+
 ## 1.0.4
 * fix createdAt
 * bug loading fix

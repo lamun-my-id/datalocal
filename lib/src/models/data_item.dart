@@ -6,10 +6,9 @@ class DataItem {
 
   late Map<String, dynamic> _data;
   Map<String, dynamic> get data => _data;
-  // bool selected = false;
+
   late String _parent;
   String get parent => _parent;
-  // bool isLoading = false;
   late DateTime _createdAt;
   DateTime? get createdAt => _createdAt;
 

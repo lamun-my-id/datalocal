@@ -9,21 +9,16 @@ import 'package:datalocal/src/models/data_sort.dart';
 import 'package:datalocal/utils/date_time.dart';
 import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter/foundation.dart';
-import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DataLocal {
   final String _stateName;
   String get stateName => _stateName;
-  // final List<DataFilter>? filters;
-  // final List<DataSort>? sorts;
   Function()? onRefresh;
   final bool _debugMode;
 
   DataLocal(
     String stateName, {
-    // this.filters,
-    // this.sorts,
     this.onRefresh,
     bool debugMode = false,
   })  : _debugMode = debugMode,
@@ -33,15 +28,11 @@ class DataLocal {
   /// Used for the first time initialize [DataLocal]
   static Future<DataLocal> create(
     String stateName, {
-    // List<DataFilter> filters = const [],
-    // List<DataSort> sorts = const [],
     Function()? onRefresh,
     bool? debugMode,
   }) async {
     DataLocal result = DataLocal(
       stateName,
-      // filters: filters,
-      // sorts: sorts,
       onRefresh: onRefresh,
       debugMode: debugMode ?? false,
     );
@@ -61,9 +52,6 @@ class DataLocal {
 
   List<DataItem> _data = [];
   List<DataItem> get data => _data;
-  // late DateTime _lastNewestCheck;
-  // late DateTime _lastUpdateCheck;
-  // Local Variable Private
   late String _name;
   final int _size = 200;
 
@@ -78,11 +66,6 @@ class DataLocal {
   /// Used to initialize DataLocal
   _initialize() async {
     try {
-      try {
-        initializeDateFormatting();
-      } catch (e) {
-        //
-      }
       _name = EncryptUtil().encript(
         "DataLocal-$stateName",
       );
@@ -286,10 +269,7 @@ class DataLocal {
     //         "");
     // _log(id);
     DataItem newData = DataItem.create(
-      id ??
-          EncryptUtil().encript(DateTimeUtils.dateFormat(DateTime.now(),
-                  format: 'yyyyMMddhhmmss') ??
-              ""),
+      id ?? EncryptUtil().encript(DateTime.now().toString()),
       value: value,
       parent: stateName,
     );

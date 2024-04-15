@@ -217,15 +217,15 @@ class _MyHomePageState extends State<MyHomePage> {
                                         maxLines: 3,
                                         overflow: TextOverflow.ellipsis,
                                       ),
-                                      Text(
-                                        DateTimeUtils.dateFormat(
-                                                data.get("createdAt")) ??
-                                            "",
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                          fontSize: 12,
-                                        ),
-                                      ),
+                                      // Text(
+                                      //   DateTimeUtils.dateFormat(
+                                      //           data.get("createdAt")) ??
+                                      //       "",
+                                      //   overflow: TextOverflow.ellipsis,
+                                      //   style: const TextStyle(
+                                      //     fontSize: 12,
+                                      //   ),
+                                      // ),
                                     ],
                                   ),
                                 ),

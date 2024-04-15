@@ -1,3 +1,7 @@
+## 1.0.6
+* fix structure
+* fix some requirements
+
 ## 1.0.5
 * fix date required
 * fix other requirements

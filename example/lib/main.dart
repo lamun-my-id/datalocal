@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:datalocal/datalocal.dart';
-import 'package:datalocal/utils/date_time.dart';
+import 'package:datalocal/datalocal_extension.dart';
 import 'package:flutter/material.dart';
 
 void main() {

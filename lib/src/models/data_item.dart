@@ -54,31 +54,6 @@ class DataItem {
     return result;
   }
 
-  dynamic get(String key) {
-    try {
-      dynamic value = {};
-      switch (key) {
-        case "#id":
-          value = _id;
-          break;
-        default:
-          {
-            List<String> path = key.split(".");
-            value = _data;
-            for (String p in path) {
-              switch (_data[key].runtimeType) {
-                default:
-                  value = value[p];
-              }
-            }
-          }
-      }
-      return value;
-    } catch (e) {
-      return null;
-    }
-  }
-
   Map<String, dynamic> toMap() {
     return {
       "id": _id,

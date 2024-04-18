@@ -13,10 +13,7 @@ extension DataItemExtension on DataItem {
             List<String> path = key.split(".");
             value = data;
             for (String p in path) {
-              switch (data[key].runtimeType) {
-                default:
-                  value = value[p];
-              }
+              value = value[p];
             }
           }
       }

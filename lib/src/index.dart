@@ -30,12 +30,14 @@ class DataLocal {
     String stateName, {
     Function()? onRefresh,
     bool? debugMode,
+    int? size,
   }) async {
     DataLocal result = DataLocal(
       stateName,
       onRefresh: onRefresh,
       debugMode: debugMode ?? false,
     );
+    if (size != null) result._size = size;
     await result._initialize();
     return result;
   }
@@ -53,7 +55,7 @@ class DataLocal {
   List<DataItem> _data = [];
   List<DataItem> get data => _data;
   late String _name;
-  final int _size = 200;
+  int _size = 100;
 
   /// Log DataLocal used on debugMode
   _log(dynamic arg) async {
@@ -355,25 +357,6 @@ class DataLocal {
   }
 }
 
-// dynamic _listDataItemAddUpdate(List<dynamic> args) {
-//   // _log('_listDataItemAddUpdate start');
-//   List<DataItem> result = args[1];
-//   DataItem newData = args[2];
-
-//   int index = result.indexWhere((element) => element.id == newData.id);
-//   if (index >= 0) {
-//     result[index] = newData;
-//   } else {
-//     result.insert(0, newData);
-//   }
-//   if (kIsWeb) {
-//     return {"data": result, "count": result.length};
-//   } else {
-//     SendPort port = args[0];
-//     Isolate.exit(port, {"data": result, "count": result.length});
-//   }
-// }
-
 /// Convert Json to List<DataItem>
 dynamic _jsonToListDataItem(List<dynamic> args) {
   List<DataItem> result = [];
@@ -434,8 +417,6 @@ dynamic _listDataItemDelete(List<dynamic> args) {
 
 /// Find List DataItem
 dynamic _listDataItemFind(List<dynamic> args) {
-  // _log('_listDataItemFind start');
-
   List<DataItem> result = args[1];
   List<DataFilter>? filters = args[2];
   List<DataSort>? sorts = args[3];
@@ -450,7 +431,6 @@ dynamic _listDataItemFind(List<dynamic> args) {
   if (search != null) {
     result = result.searchData(search);
   }
-  // _log(result.length.toString());
   if (kIsWeb) {
     return {"data": result, "count": result.length};
   } else {
@@ -465,13 +445,9 @@ dynamic _listDataItemToJson(List<dynamic> args) {
   String result = jsonEncode(
     (args[1] as List<DataItem>).map((e) => e.toMap()).toList(),
     toEncodable: (_) {
-      // if (_ is Timestamp) {
-      //   return DateTimeUtils.toDateTime(_).toString();
-      // }
       if (_ is DateTime) {
         return DateTimeUtils.toDateTime(_).toString();
       } else {
-        // _log(_.runtimeType.toString());
         return "";
       }
     },

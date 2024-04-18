@@ -13,8 +13,6 @@ extension ListDataItem on List<DataItem> {
       for (int i = 0; i < parameters.length; i++) {
         List separates = List.generate(length, (index) {
           List<String> fields = parameters[i].key.toString().split('.');
-          // List<String>? onCatchFields =
-          //     (parameters[i].onCatch ?? '').toString().split('.');
           if (fields.length > 1) {
             return _getValueFromMap(fields, this[index].data);
           } else {

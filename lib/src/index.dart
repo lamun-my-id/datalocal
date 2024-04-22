@@ -2,11 +2,12 @@ import 'dart:convert';
 import 'dart:isolate';
 
 import 'package:datalocal/src/extensions/list_data_item.dart';
+import 'package:datalocal/src/models/data_container.dart';
 import 'package:datalocal/src/models/data_filter.dart';
 import 'package:datalocal/src/models/data_item.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
-import 'package:datalocal/utils/date_time.dart';
+// import 'package:datalocal/utils/date_time.dart';
 import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -30,14 +31,12 @@ class DataLocal {
     String stateName, {
     Function()? onRefresh,
     bool? debugMode,
-    int? size,
   }) async {
     DataLocal result = DataLocal(
       stateName,
       onRefresh: onRefresh,
       debugMode: debugMode ?? false,
     );
-    if (size != null) result._size = size;
     await result._initialize();
     return result;
   }
@@ -52,10 +51,11 @@ class DataLocal {
   int _count = 0;
   int get count => _count;
 
+  late DataContainer _container;
+
   List<DataItem> _data = [];
   List<DataItem> get data => _data;
   late String _name;
-  int _size = 100;
 
   /// Log DataLocal used on debugMode
   _log(dynamic arg) async {
@@ -75,36 +75,23 @@ class DataLocal {
         String? res;
         try {
           final SharedPreferences prefs = await SharedPreferences.getInstance();
-          res = (prefs.getString(EncryptUtil().encript("$_name-0")));
+          res = (prefs.getString(EncryptUtil().encript(_name)));
         } catch (e) {
           _log("error get res");
         }
 
         if (res == null) {
-          _data = [];
-          throw "tidak ada state (${EncryptUtil().encript("$_name-0")})";
+          _container = DataContainer(
+            name: _name,
+            ids: [],
+          );
+          throw "tidak ada state";
+        } else {
+          _container =
+              DataContainer.fromMap(jsonDecode(EncryptUtil().decript(res)));
         }
-        try {
-          if (kIsWeb) {
-            Map<String, dynamic> value = _jsonToListDataItem([null, res]);
-            data.addAll(value['data']);
-            _count = data.length;
-          } else {
-            ReceivePort rPort = ReceivePort();
-            await Isolate.spawn(_jsonToListDataItem, [rPort.sendPort, res]);
-            Map<String, dynamic> value = await rPort.first;
-            data.addAll(value['data']);
-            _count = data.length;
-            rPort.close();
-          }
-          _isInit = true;
-          refresh();
-        } catch (e) {
-          _log("initialize error(3) : $e");
-          //
-        }
-        _count = data.length;
-        if (count == 0 || count == _size) {
+
+        if (_container.ids.isNotEmpty) {
           _loadState();
         }
       } catch (e) {
@@ -122,38 +109,12 @@ class DataLocal {
   Future<void> _saveState() async {
     _isLoading = true;
     refresh();
-    int loop = (count / _size).ceil();
-    _log('state akan dibuat ${loop + 1} ($count/$_size)');
-    for (int i = 0; i < loop + 1; i++) {
-      _log("start savestate number : ${i + 1}");
-      SharedPreferences prefs;
-      try {
-        prefs = await SharedPreferences.getInstance();
-        try {
-          if (kIsWeb) {
-            String res = _listDataItemToJson(
-                [null, data.skip(i * _size).take(_size).toList()]);
-            // _log((await rPort.first as String).length);
-            prefs.setString(EncryptUtil().encript("$_name-$i"), res);
-          } else {
-            ReceivePort rPort = ReceivePort();
-            _log("Isolate spawn");
-            await Isolate.spawn(_listDataItemToJson,
-                [rPort.sendPort, data.skip(i * _size).take(_size).toList()]);
-            // _log((await rPort.first as String).length);
-            String value = await rPort.first as String;
-            prefs.setString(EncryptUtil().encript("$_name-$i"), value);
-            rPort.close();
-          }
-          _log("Berhasil save data");
-        } catch (e) {
-          _log("gagal save state : $e");
-          //
-        }
-        _log("end of savestate number : ${i + 1}");
-      } catch (e) {
-        _log("pref null");
-      }
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(EncryptUtil().encript(_name),
+          EncryptUtil().encript(_container.toJson()));
+    } catch (e) {
+      //
     }
     _isLoading = false;
     refresh();
@@ -161,43 +122,21 @@ class DataLocal {
 
   /// Used to load state data from shared preferences
   Future<void> _loadState() async {
-    // _log("start loadstate");
     _isLoading = true;
     refresh();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    int i = 0;
-    bool lanjut = true;
-    List<DataItem> result = [];
-    while (lanjut) {
-      String? res = (prefs.getString(EncryptUtil().encript("$_name-$i")));
-      if (res != null) {
-        // _log("start loadstate number: ${i + 1}");
-        try {
-          if (kIsWeb) {
-            Map<String, dynamic> value = _jsonToListDataItem([null, res]);
-            result.addAll(value['data']);
-          } else {
-            ReceivePort rPort = ReceivePort();
-            await Isolate.spawn(_jsonToListDataItem, [rPort.sendPort, res]);
-            Map<String, dynamic> value = await rPort.first;
-            result.addAll(value['data']);
-            rPort.close();
-          }
-          refresh();
-          // _log("Berhasil load data");
-        } catch (e) {
-          //
-        }
-        i++;
+
+    for (String id in _container.ids) {
+      String? ref = prefs.getString(EncryptUtil().encript(id));
+      if (ref == null) {
+        // Tidak ada data yang disimpan
       } else {
-        lanjut = false;
+        _data.add(DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref))));
       }
     }
-    _data = result;
+
     _count = data.length;
-    _data = await find(
-        // sorts: sorts
-        );
+    _data = await find();
     _isLoading = false;
     refresh();
   }
@@ -221,9 +160,7 @@ class DataLocal {
     }
     _data = result;
     _count = data.length;
-    _data = await find(
-        // sorts: sorts
-        );
+    _data = await find();
     _isLoading = false;
     refresh();
   }
@@ -278,14 +215,15 @@ class DataLocal {
     try {
       data.insert(0, newData);
       refresh();
-      find(
-              // sorts: sorts
-              )
-          .then((value) async {
+      find().then((value) async {
         _data = value;
         _count = data.length;
         refresh();
         _log("start save state");
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        prefs.setString(EncryptUtil().encript(newData.id),
+            EncryptUtil().encript(newData.toJson()));
+        _container.ids.add(newData.id);
         await _saveState();
         _log("start save success");
       });
@@ -322,6 +260,9 @@ class DataLocal {
     if (d.isEmpty) {
       throw "Tidak ada data";
     }
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setString(
+        EncryptUtil().encript(id), EncryptUtil().encript(d.first.toJson()));
     refresh();
     _saveState();
     return d.first;
@@ -341,6 +282,11 @@ class DataLocal {
       }
       _data = res['data'];
       _count = data.length;
+      _container.ids.remove(id);
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove(EncryptUtil().encript(id));
+      _saveState();
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
@@ -358,25 +304,25 @@ class DataLocal {
 }
 
 /// Convert Json to List<DataItem>
-dynamic _jsonToListDataItem(List<dynamic> args) {
-  List<DataItem> result = [];
-  int count = 0;
-  try {
-    result = List<Map<String, dynamic>>.from(
-            jsonDecode(EncryptUtil().decript(args[1])))
-        .map((e) => DataItem.fromMap(e))
-        .toList();
-    count = result.length;
-  } catch (e) {
-    // print(args[1]);
-  }
-  if (kIsWeb) {
-    return {"data": result, "count": count};
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, {"data": result, "count": count});
-  }
-}
+// dynamic _jsonToListDataItem(List<dynamic> args) {
+//   List<DataItem> result = [];
+//   int count = 0;
+//   try {
+//     result = List<Map<String, dynamic>>.from(
+//             jsonDecode(EncryptUtil().decript(args[1])))
+//         .map((e) => DataItem.fromMap(e))
+//         .toList();
+//     count = result.length;
+//   } catch (e) {
+//     // print(args[1]);
+//   }
+//   if (kIsWeb) {
+//     return {"data": result, "count": count};
+//   } else {
+//     SendPort port = args[0];
+//     Isolate.exit(port, {"data": result, "count": count});
+//   }
+// }
 
 /// Update List DataItem
 dynamic _listDataItemUpdate(List<dynamic> args) {
@@ -440,23 +386,23 @@ dynamic _listDataItemFind(List<dynamic> args) {
 }
 
 /// Convert List<DataItem> to json
-dynamic _listDataItemToJson(List<dynamic> args) {
-  // _log('_listDataItemModelToJson start');
-  String result = jsonEncode(
-    (args[1] as List<DataItem>).map((e) => e.toMap()).toList(),
-    toEncodable: (_) {
-      if (_ is DateTime) {
-        return DateTimeUtils.toDateTime(_).toString();
-      } else {
-        return "";
-      }
-    },
-  );
-  // _log('${result.length}');
-  if (kIsWeb) {
-    return EncryptUtil().encript(result);
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, EncryptUtil().encript(result));
-  }
-}
+// dynamic _listDataItemToJson(List<dynamic> args) {
+//   // _log('_listDataItemModelToJson start');
+//   String result = jsonEncode(
+//     (args[1] as List<DataItem>).map((e) => e.toMap()).toList(),
+//     toEncodable: (_) {
+//       if (_ is DateTime) {
+//         return DateTimeUtils.toDateTime(_).toString();
+//       } else {
+//         return "";
+//       }
+//     },
+//   );
+//   // _log('${result.length}');
+//   if (kIsWeb) {
+//     return EncryptUtil().encript(result);
+//   } else {
+//     SendPort port = args[0];
+//     Isolate.exit(port, EncryptUtil().encript(result));
+//   }
+// }

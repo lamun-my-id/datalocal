@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:datalocal/utils/date_time.dart';
 
 class DataItem {
@@ -67,6 +69,19 @@ class DataItem {
   update(Map<String, dynamic> value) {
     _data = {..._data, ...value};
     _updatedAt = DateTime.now();
+  }
+
+  String toJson() {
+    return jsonEncode(
+      toMap(),
+      toEncodable: (_) {
+        if (_ is DateTime) {
+          return DateTimeUtils.toDateTime(_).toString();
+        } else {
+          return "";
+        }
+      },
+    );
   }
 
   // Future<void> updateForce(Map<Object, dynamic> value) async {

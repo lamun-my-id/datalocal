@@ -1,3 +1,7 @@
+## 1.0.8
+* change flow transaction Data
+* fix bug
+
 ## 1.0.7
 * now size can be customized to load more fast
 * fix some requirements

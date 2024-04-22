@@ -7,7 +7,7 @@ import 'package:datalocal/src/models/data_filter.dart';
 import 'package:datalocal/src/models/data_item.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
-import 'package:datalocal/utils/date_time.dart';
+// import 'package:datalocal/utils/date_time.dart';
 import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -304,25 +304,25 @@ class DataLocal {
 }
 
 /// Convert Json to List<DataItem>
-dynamic _jsonToListDataItem(List<dynamic> args) {
-  List<DataItem> result = [];
-  int count = 0;
-  try {
-    result = List<Map<String, dynamic>>.from(
-            jsonDecode(EncryptUtil().decript(args[1])))
-        .map((e) => DataItem.fromMap(e))
-        .toList();
-    count = result.length;
-  } catch (e) {
-    // print(args[1]);
-  }
-  if (kIsWeb) {
-    return {"data": result, "count": count};
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, {"data": result, "count": count});
-  }
-}
+// dynamic _jsonToListDataItem(List<dynamic> args) {
+//   List<DataItem> result = [];
+//   int count = 0;
+//   try {
+//     result = List<Map<String, dynamic>>.from(
+//             jsonDecode(EncryptUtil().decript(args[1])))
+//         .map((e) => DataItem.fromMap(e))
+//         .toList();
+//     count = result.length;
+//   } catch (e) {
+//     // print(args[1]);
+//   }
+//   if (kIsWeb) {
+//     return {"data": result, "count": count};
+//   } else {
+//     SendPort port = args[0];
+//     Isolate.exit(port, {"data": result, "count": count});
+//   }
+// }
 
 /// Update List DataItem
 dynamic _listDataItemUpdate(List<dynamic> args) {
@@ -386,23 +386,23 @@ dynamic _listDataItemFind(List<dynamic> args) {
 }
 
 /// Convert List<DataItem> to json
-dynamic _listDataItemToJson(List<dynamic> args) {
-  // _log('_listDataItemModelToJson start');
-  String result = jsonEncode(
-    (args[1] as List<DataItem>).map((e) => e.toMap()).toList(),
-    toEncodable: (_) {
-      if (_ is DateTime) {
-        return DateTimeUtils.toDateTime(_).toString();
-      } else {
-        return "";
-      }
-    },
-  );
-  // _log('${result.length}');
-  if (kIsWeb) {
-    return EncryptUtil().encript(result);
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, EncryptUtil().encript(result));
-  }
-}
+// dynamic _listDataItemToJson(List<dynamic> args) {
+//   // _log('_listDataItemModelToJson start');
+//   String result = jsonEncode(
+//     (args[1] as List<DataItem>).map((e) => e.toMap()).toList(),
+//     toEncodable: (_) {
+//       if (_ is DateTime) {
+//         return DateTimeUtils.toDateTime(_).toString();
+//       } else {
+//         return "";
+//       }
+//     },
+//   );
+//   // _log('${result.length}');
+//   if (kIsWeb) {
+//     return EncryptUtil().encript(result);
+//   } else {
+//     SendPort port = args[0];
+//     Isolate.exit(port, EncryptUtil().encript(result));
+//   }
+// }

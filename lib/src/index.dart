@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:isolate';
 
+import 'package:datalocal/src/extensions/data_item.dart';
 import 'package:datalocal/src/extensions/list_data_item.dart';
 import 'package:datalocal/src/models/data_container.dart';
 import 'package:datalocal/src/models/data_filter.dart';

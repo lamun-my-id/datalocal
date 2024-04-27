@@ -1,3 +1,6 @@
+## 1.0.10
+* change method to extension function
+
 ## 1.0.9
 * add model
 

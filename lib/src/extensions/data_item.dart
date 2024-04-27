@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:datalocal/utils/date_time.dart';
+
 import '../models/data_item.dart';
 
 extension DataItemExtension on DataItem {
@@ -21,5 +25,18 @@ extension DataItemExtension on DataItem {
     } catch (e) {
       return null;
     }
+  }
+
+  String toJson() {
+    return jsonEncode(
+      toMap(),
+      toEncodable: (_) {
+        if (_ is DateTime) {
+          return DateTimeUtils.toDateTime(_).toString();
+        } else {
+          return "";
+        }
+      },
+    );
   }
 }

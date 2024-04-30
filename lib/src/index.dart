@@ -6,6 +6,7 @@ import 'package:datalocal/src/extensions/list_data_item.dart';
 import 'package:datalocal/src/models/data_container.dart';
 import 'package:datalocal/src/models/data_filter.dart';
 import 'package:datalocal/src/models/data_item.dart';
+import 'package:datalocal/src/models/data_key.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
 // import 'package:datalocal/utils/date_time.dart';
@@ -256,7 +257,7 @@ class DataLocal {
     }
 
     List<DataItem> d = await find(
-      filters: [DataFilter(key: "#id", value: id)],
+      filters: [DataFilter(key: DataKey("#id"), value: id)],
     );
     if (d.isEmpty) {
       throw "Tidak ada data";

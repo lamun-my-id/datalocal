@@ -1,3 +1,5 @@
+import 'package:datalocal/src/models/data_key.dart';
+
 enum DataFilterOperator {
   isEqualTo,
   isNotEqualTo,
@@ -16,7 +18,7 @@ enum DataFilterOperator {
 /// Used separated with dot '.' to sort data inside map variable
 /// Use [operator] to filter more flexible
 class DataFilter {
-  String key;
+  DataKey key;
   dynamic value;
   DataFilterOperator operator;
 

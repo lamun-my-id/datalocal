@@ -1,7 +1,8 @@
 import 'package:datalocal/src/models/data_item.dart';
+import 'package:datalocal/src/models/data_key.dart';
 
 class DataSearch {
-  List<String>? keys;
+  List<DataKey>? keys;
   String? value;
   bool Function(DataItem)? builder;
 

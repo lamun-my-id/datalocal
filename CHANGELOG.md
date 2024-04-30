@@ -1,3 +1,7 @@
+## 1.0.11
+* Add Data Key
+* Add onCatchKey
+
 ## 1.0.10
 * change method to extension function
 

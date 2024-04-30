@@ -2,6 +2,7 @@ import 'package:datalocal/src/extensions/data_item.dart';
 import 'package:datalocal/src/extensions/list.dart';
 import 'package:datalocal/src/models/data_filter.dart';
 import 'package:datalocal/src/models/data_item.dart';
+import 'package:datalocal/src/models/data_key.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
 
@@ -12,12 +13,7 @@ extension ListDataItem on List<DataItem> {
       List<List<DataItem>> temp = [this];
       for (int i = 0; i < parameters.length; i++) {
         List separates = List.generate(length, (index) {
-          List<String> fields = parameters[i].key.toString().split('.');
-          if (fields.length > 1) {
-            return _getValueFromMap(fields, this[index].data);
-          } else {
-            return this[index].data[parameters[i].key];
-          }
+          return this[index].get(parameters[i].key);
         }).toSet().toList();
         separates.sort((a, b) {
           if (a == null || b == null) {
@@ -39,12 +35,7 @@ extension ListDataItem on List<DataItem> {
         for (List<DataItem> dTemp in temp) {
           for (dynamic separate in separates) {
             store.add(dTemp.where((element) {
-              List<String> fields = parameters[i].key.toString().split('.');
-              if (fields.length > 1) {
-                return _getValueFromMap(fields, element.data) == separate;
-              } else {
-                return (element.data[parameters[i].key]) == separate;
-              }
+              return element.get(parameters[i].key) == separate;
             }).toList());
           }
         }
@@ -208,7 +199,7 @@ extension ListDataItem on List<DataItem> {
     if (parameter.keys != null && parameter.value != null) {
       for (DataItem data in this) {
         String validator = "";
-        for (String key in parameter.keys!) {
+        for (DataKey key in parameter.keys!) {
           validator += data.get(key) ?? "";
         }
         // final RegExp filterRegExp =
@@ -233,22 +224,4 @@ extension ListDataItem on List<DataItem> {
     result.retainWhere((x) => ids.remove(x.id));
     return result;
   }
-}
-
-dynamic _getValueFromMap(List<String> fields, Map<String, dynamic> data) {
-  Map<String, dynamic> param = data;
-  dynamic value;
-  for (int i = 0; i < fields.length; i++) {
-    // if (fields.isNotEmpty) {
-    if (i == fields.length - 1) {
-      value = param[fields[i]];
-    } else {
-      param = (param[fields[i]] ?? {}) ?? {};
-    }
-    // } else {
-    //   value = data[fields[i]];
-    // }
-  }
-
-  return value;
 }

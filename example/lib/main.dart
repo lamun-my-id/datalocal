@@ -70,8 +70,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   openForm(DataItem value) {
     selectedData = value;
-    titleController.text = value.get('title');
-    contentController.text = value.get("content");
+    titleController.text = value.get(DataKey('title'));
+    contentController.text = value.get(DataKey("content"));
     setState(() {});
   }
 
@@ -205,7 +205,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                       SizedBox(
                                         width: width,
                                         child: Text(
-                                          data.get("title"),
+                                          data.get(DataKey("title")),
                                           style: const TextStyle(
                                             fontSize: 16,
                                             fontWeight: FontWeight.w600,
@@ -213,7 +213,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                         ),
                                       ),
                                       Text(
-                                        data.get("content"),
+                                        data.get(DataKey("content")),
                                         maxLines: 3,
                                         overflow: TextOverflow.ellipsis,
                                       ),

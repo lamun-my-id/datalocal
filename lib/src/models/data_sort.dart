@@ -1,5 +1,7 @@
+import 'package:datalocal/src/models/data_key.dart';
+
 class DataSort {
-  String key;
+  DataKey key;
   String? as;
   bool desc;
 

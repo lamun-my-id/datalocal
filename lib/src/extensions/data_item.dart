@@ -22,6 +22,7 @@ extension DataItemExtension on DataItem {
             }
           }
       }
+      if (value == null) throw "value null";
       return value;
     } catch (e) {
       if (key.onKeyCatch != null) {

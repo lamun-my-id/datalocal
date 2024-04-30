@@ -1,3 +1,6 @@
+## 1.0.12
+* Fix Data Key
+
 ## 1.0.11
 * Add Data Key
 * Add onCatchKey

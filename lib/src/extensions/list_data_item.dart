@@ -5,6 +5,7 @@ import 'package:datalocal/src/models/data_item.dart';
 import 'package:datalocal/src/models/data_key.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
+import 'package:datalocal/utils/date_time.dart';
 
 extension ListDataItem on List<DataItem> {
   /// Part Extension of [List<DataItem>] to sort data
@@ -26,6 +27,20 @@ extension ListDataItem on List<DataItem> {
               b = 0;
               return !parameters[i].desc ? a.compareTo(1) : b.compareTo(1);
             }
+          } else if (a is DateTime || b is DateTime) {
+            a = DateTimeUtils.toDateTime(a);
+            b = DateTimeUtils.toDateTime(b);
+            if (a == null) {
+              a = 1;
+              b = 1;
+              return !parameters[i].desc ? a.compareTo(0) : b.compareTo(0);
+            }
+            if (b == null) {
+              a = 0;
+              b = 0;
+              return !parameters[i].desc ? a.compareTo(1) : b.compareTo(1);
+            }
+            return !parameters[i].desc ? a.compareTo(b) : b.compareTo(a);
           } else {
             return !parameters[i].desc ? a.compareTo(b) : b.compareTo(a);
           }

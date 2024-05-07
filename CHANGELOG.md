@@ -1,3 +1,6 @@
+## 1.0.13
+* Fix Data Sort for DateTime
+
 ## 1.0.12
 * Fix Data Key
 

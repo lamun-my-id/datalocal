@@ -1,3 +1,6 @@
+## 1.0.14
+* Add Paginate Extension
+
 ## 1.0.13
 * Fix Data Sort for DateTime
 

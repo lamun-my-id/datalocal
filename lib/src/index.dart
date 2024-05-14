@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:isolate';
 
-import 'package:datalocal/src/extensions/data_item.dart';
 import 'package:datalocal/src/extensions/list_data_item.dart';
 import 'package:datalocal/src/models/data_container.dart';
 import 'package:datalocal/src/models/data_filter.dart';
@@ -148,21 +147,12 @@ class DataLocal {
     _isLoading = true;
     refresh();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
-    int i = 0;
-    bool lanjut = true;
-    List<DataItem> result = [];
-    while (lanjut) {
-      String? res = (prefs.getString(EncryptUtil().encript("$_name-$i")));
-      if (res != null) {
-        await prefs.remove(EncryptUtil().encript("$_name-$i"));
-        i++;
-      } else {
-        lanjut = false;
-      }
+    await (prefs.remove(EncryptUtil().encript(_name)));
+
+    for (int i = 0; i < _data.length; i++) {
+      await (prefs.remove(EncryptUtil().encript(_data[0].path())));
+      _data.removeAt(0);
     }
-    _data = result;
-    _count = data.length;
-    _data = await find();
     _isLoading = false;
     refresh();
   }
@@ -212,7 +202,8 @@ class DataLocal {
     DataItem newData = DataItem.create(
       id ?? EncryptUtil().encript(DateTime.now().toString()),
       value: value,
-      parent: stateName,
+      name: stateName,
+      parent: "",
     );
     try {
       data.insert(0, newData);
@@ -222,10 +213,11 @@ class DataLocal {
         _count = data.length;
         refresh();
         _log("start save state");
-        SharedPreferences prefs = await SharedPreferences.getInstance();
-        prefs.setString(EncryptUtil().encript(newData.id),
-            EncryptUtil().encript(newData.toJson()));
-        _container.ids.add(newData.id);
+        await newData.save({});
+        // SharedPreferences prefs = await SharedPreferences.getInstance();
+        // prefs.setString(EncryptUtil().encript(newData.path()),
+        //     EncryptUtil().encript(newData.toJson()));
+        _container.ids.add(newData.path());
         await _saveState();
         _log("start save success");
       });
@@ -262,9 +254,10 @@ class DataLocal {
     if (d.isEmpty) {
       throw "Tidak ada data";
     }
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setString(
-        EncryptUtil().encript(id), EncryptUtil().encript(d.first.toJson()));
+    await d.first.save({});
+    // SharedPreferences prefs = await SharedPreferences.getInstance();
+    // prefs.setString(EncryptUtil().encript(d.first.path()),
+    //     EncryptUtil().encript(d.first.toJson()));
     refresh();
     _saveState();
     return d.first;
@@ -273,6 +266,15 @@ class DataLocal {
   /// Deletion DataItem
   Future<void> deleteOne(String id) async {
     try {
+      List<DataItem> d = await find(
+        filters: [DataFilter(key: DataKey("#id"), value: id)],
+      );
+      if (d.isEmpty) {
+        throw "Tidak ada data";
+      }
+
+      if (d.isEmpty) throw "Tidak ada data";
+
       Map<String, dynamic> res = {};
       if (kIsWeb) {
         res = _listDataItemDelete([null, data, id]);
@@ -284,10 +286,10 @@ class DataLocal {
       }
       _data = res['data'];
       _count = data.length;
-      _container.ids.remove(id);
+      _container.ids.remove(d.first.path());
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.remove(EncryptUtil().encript(id));
+      await prefs.remove(EncryptUtil().encript(d.first.path()));
       _saveState();
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
@@ -334,7 +336,7 @@ dynamic _listDataItemUpdate(List<dynamic> args) {
 
   int i = result.indexWhere((element) => element.id == id);
   if (i >= 0) {
-    result[i].update(update);
+    result[i].save(update);
   }
 
   if (kIsWeb) {

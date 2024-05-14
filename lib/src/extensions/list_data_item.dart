@@ -240,12 +240,10 @@ extension ListDataItem on List<DataItem> {
     return result;
   }
 
-  List<DataItem> paginate(int index, {required int size}) {
+  // default page number is 1 and size is 30
+  List<DataItem> paginate({int page = 1, int size = 30}) {
     List<List<DataItem>> data = List<List<DataItem>>.from(chunks(size));
-    if (index <= data.length - 1) {
-      return data[index];
-    } else {
-      return [];
-    }
+    if (page < 1) throw "Page ready at 1 to ${data.length}";
+    return data[page - 1];
   }
 }

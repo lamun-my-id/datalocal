@@ -16,6 +16,12 @@ extension DataItemExtension on DataItem {
         case "#id":
           value = id;
           break;
+        case "#createdAt":
+          value = createdAt;
+          break;
+        case "#updatedAt":
+          value = updatedAt;
+          break;
         default:
           {
             List<String> path = key.key.split(".");

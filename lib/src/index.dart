@@ -57,13 +57,13 @@ class DataLocal {
 
   late DataContainer _container;
 
-  List<DataItem> _data = [];
-  List<DataItem> get data => _data;
+  // List<DataItem> _data = [];
+  // List<DataItem> get data => _data;
 
   late String _name;
 
-  Map<String, dynamic> _raw = {};
-  Map<String, dynamic> get raw => _raw;
+  Map<String, DataItem> _raw = {};
+  Map<String, DataItem> get raw => _raw;
 
   /// Log DataLocal used on debugMode
   _log(dynamic arg) async {
@@ -140,12 +140,14 @@ class DataLocal {
       if (ref == null) {
         // Tidak ada data yang disimpan
       } else {
-        _data.add(DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref))));
+        DataItem d = DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref)));
+        _raw[d.id] = d;
+        // _data.add(DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref))));
       }
     }
 
-    _count = data.length;
-    _data = await find();
+    _count = _container.ids.length;
+
     _isLoading = false;
     refresh();
   }
@@ -157,9 +159,10 @@ class DataLocal {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await (prefs.remove(EncryptUtil().encript(_name)));
 
-    for (int i = 0; i < _data.length; i++) {
-      await (prefs.remove(EncryptUtil().encript(_data[0].path())));
-      _data.removeAt(0);
+    for (int i = 0; i < _container.ids.length; i++) {
+      await (prefs
+          .remove(EncryptUtil().encript(_raw[_container.ids[i]]!.path())));
+      _raw.remove(_container.ids[i]);
     }
     _isLoading = false;
     refresh();
@@ -187,11 +190,11 @@ class DataLocal {
     Map<String, dynamic> res = {};
     try {
       if (kIsWeb) {
-        res = _listDataItemFind([null, data, filters, sorts, search]);
+        res = _listDataItemFind([null, _raw, filters, sorts, search]);
       } else {
         ReceivePort rPort = ReceivePort();
         await Isolate.spawn(
-            _listDataItemFind, [rPort.sendPort, data, filters, sorts, search]);
+            _listDataItemFind, [rPort.sendPort, _raw, filters, sorts, search]);
         res = await rPort.first;
         rPort.close();
       }
@@ -217,21 +220,12 @@ class DataLocal {
       parent: "",
     );
     try {
-      data.insert(0, newData);
+      _raw[newData.id] = newData;
       refresh();
-      find().then((value) async {
-        _data = value;
-        _count = data.length;
-        refresh();
-        _log("start save state");
-        await newData.save({});
-        // SharedPreferences prefs = await SharedPreferences.getInstance();
-        // prefs.setString(EncryptUtil().encript(newData.path()),
-        //     EncryptUtil().encript(newData.toJson()));
-        _container.ids.add(newData.path());
-        await _saveState();
-        _log("start save success");
-      });
+      await newData.save({});
+      _container.ids.add(newData.path());
+      _count = _container.ids.length;
+      await _saveState();
     } catch (e) {
       _log("error disini");
       //
@@ -243,35 +237,15 @@ class DataLocal {
   Future<DataItem> updateOne(String id,
       {required Map<String, dynamic> value}) async {
     try {
-      Map<String, dynamic> res = {};
-      if (kIsWeb) {
-        res = _listDataItemUpdate([null, data, id, value]);
-      } else {
-        ReceivePort rPort = ReceivePort();
-        await Isolate.spawn(
-            _listDataItemUpdate, [rPort.sendPort, data, id, value]);
-        res = await rPort.first;
-        rPort.close();
-      }
-      _data = res['data'];
-      _count = data.length;
+      _count = _container.ids.length;
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
 
-    List<DataItem> d = await find(
-      filters: [DataFilter(key: DataKey("#id"), value: id)],
-    );
-    if (d.isEmpty) {
-      throw "Tidak ada data";
-    }
-    await d.first.save({});
-    // SharedPreferences prefs = await SharedPreferences.getInstance();
-    // prefs.setString(EncryptUtil().encript(d.first.path()),
-    //     EncryptUtil().encript(d.first.toJson()));
+    _raw[id]!.save(value);
     refresh();
     _saveState();
-    return d.first;
+    return _raw[id]!;
   }
 
   /// Deletion DataItem
@@ -287,17 +261,10 @@ class DataLocal {
       if (d.isEmpty) throw "Tidak ada data";
 
       Map<String, dynamic> res = {};
-      if (kIsWeb) {
-        res = _listDataItemDelete([null, data, id]);
-      } else {
-        ReceivePort rPort = ReceivePort();
-        await Isolate.spawn(_listDataItemDelete, [rPort.sendPort, data, id]);
-        res = await rPort.first;
-        rPort.close();
-      }
-      _data = res['data'];
-      _count = data.length;
+
+      _raw = res['data'];
       _container.ids.remove(d.first.path());
+      _count = _container.ids.length;
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       await prefs.remove(EncryptUtil().encript(d.first.path()));
@@ -313,7 +280,7 @@ class DataLocal {
   /// Start from initialize, save state will not deleted
   Future<void> reboot() async {
     await _deleteState();
-    _data.clear();
+    _raw.clear();
     await _initialize();
   }
 }
@@ -340,48 +307,50 @@ class DataLocal {
 // }
 
 /// Update List DataItem
-dynamic _listDataItemUpdate(List<dynamic> args) {
-  List<DataItem> result = args[1];
-  String id = args[2];
-  Map<String, dynamic> update = args[3];
+// dynamic _listDataItemUpdate(List<dynamic> args) {
+//   List<DataItem> result = args[1];
+//   String id = args[2];
+//   Map<String, dynamic> update = args[3];
 
-  int i = result.indexWhere((element) => element.id == id);
-  if (i >= 0) {
-    result[i].save(update);
-  }
+//   int i = result.indexWhere((element) => element.id == id);
+//   if (i >= 0) {
+//     result[i].save(update);
+//   }
 
-  if (kIsWeb) {
-    return {"data": result, "count": result.length};
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, {"data": result, "count": result.length});
-  }
-}
+//   if (kIsWeb) {
+//     return {"data": result, "count": result.length};
+//   } else {
+//     SendPort port = args[0];
+//     Isolate.exit(port, {"data": result, "count": result.length});
+//   }
+// }
 
 /// Delete List DataItem
-dynamic _listDataItemDelete(List<dynamic> args) {
-  List<DataItem> result = args[1];
-  String id = args[2];
+// dynamic _listDataItemDelete(List<dynamic> args) {
+//   List<DataItem> result = args[1];
+//   String id = args[2];
 
-  int i = result.indexWhere((element) => element.id == id);
-  if (i >= 0) {
-    result.removeAt(i);
-  }
+//   int i = result.indexWhere((element) => element.id == id);
+//   if (i >= 0) {
+//     result.removeAt(i);
+//   }
 
-  if (kIsWeb) {
-    return {"data": result, "count": result.length};
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, {"data": result, "count": result.length});
-  }
-}
+//   if (kIsWeb) {
+//     return {"data": result, "count": result.length};
+//   } else {
+//     SendPort port = args[0];
+//     Isolate.exit(port, {"data": result, "count": result.length});
+//   }
+// }
 
 /// Find List DataItem
 dynamic _listDataItemFind(List<dynamic> args) {
-  List<DataItem> result = args[1];
+  Map<String, DataItem> raw = Map<String, DataItem>.from(args[1]);
   List<DataFilter>? filters = args[2];
   List<DataSort>? sorts = args[3];
   DataSearch? search = args[4];
+
+  List<DataItem> result = raw.entries.map((entry) => entry.value).toList();
 
   if (filters != null) {
     result = result.filterData(filters);

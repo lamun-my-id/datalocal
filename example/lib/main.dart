@@ -58,9 +58,16 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       // debugMode: true,
     );
-    state.onRefresh = () {
-      data = state.data;
-      // print("object data length ${data.length}");
+    state.onRefresh = () async {
+      data = await state.find(
+        sorts: [
+          DataSort(
+            key: DataKey("#createdAt"),
+            desc: true,
+          ),
+        ],
+      );
+      print("object data length ${data.length}");
       setState(() {});
     };
     state.refresh();
@@ -195,9 +202,9 @@ class _MyHomePageState extends State<MyHomePage> {
                             horizontal: 16,
                             vertical: 8,
                           ),
-                          itemCount: state.count,
+                          itemCount: data.length,
                           itemBuilder: (_, index) {
-                            DataItem data = state.data[index];
+                            DataItem data = this.data[index];
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 4,

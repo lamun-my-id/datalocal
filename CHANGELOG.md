@@ -1,4 +1,8 @@
 ## 1.0.17
+* Id Fix 
+* Add Sequence
+
+## 1.0.17
 * save function fixed
 
 ## 1.0.16

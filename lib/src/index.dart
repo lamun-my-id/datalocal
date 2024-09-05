@@ -52,11 +52,18 @@ class DataLocal {
   int _count = 0;
   int get count => _count;
 
+  int _sequence = 0;
+  int get sequence => _sequence;
+
   late DataContainer _container;
 
   List<DataItem> _data = [];
   List<DataItem> get data => _data;
+
   late String _name;
+
+  Map<String, dynamic> _raw = {};
+  Map<String, dynamic> get raw => _raw;
 
   /// Log DataLocal used on debugMode
   _log(dynamic arg) async {
@@ -84,6 +91,7 @@ class DataLocal {
         if (res == null) {
           _container = DataContainer(
             name: _name,
+            seq: sequence,
             ids: [],
           );
           throw "tidak ada state";
@@ -199,8 +207,11 @@ class DataLocal {
     //     DateTimeUtils.dateFormat(DateTime.now(), format: 'yyyyMMddhhmmss') ??
     //         "");
     // _log(id);
+    _sequence++;
     DataItem newData = DataItem.create(
-      id ?? EncryptUtil().encript(DateTime.now().toString()),
+      id ??
+          EncryptUtil()
+              .encript(DateTime.now().toString() + sequence.toString()),
       value: value,
       name: stateName,
       parent: "",

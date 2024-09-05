@@ -26,6 +26,9 @@ class DataItem {
   DateTime? _updatedAt;
   DateTime? get updatedAt => _updatedAt;
 
+  int? _seq;
+  int? get seq => _seq;
+
   /// Used by [DataLocal] data
   DataItem() {
     _createdAt = DateTime.now();
@@ -34,12 +37,13 @@ class DataItem {
 
   // Generate new DataItem
   static DataItem create(String id,
-      {Map<String, dynamic>? value, String? parent, String? name}) {
+      {Map<String, dynamic>? value, String? parent, String? name, int? seq}) {
     DataItem result = DataItem();
     result._id = id;
     result._data = value ?? {};
     result._parent = parent ?? "";
     result._name = name ?? "";
+    result._seq = seq;
     return result;
   }
 
@@ -52,6 +56,7 @@ class DataItem {
           DateTimeUtils.toDateTime(value['updatedAt'] ?? data['updatedAt']);
       data["deletedAt"] =
           DateTimeUtils.toDateTime(value['deletedAt'] ?? data['deletedAt']);
+      data["seq"] = DateTimeUtils.toDateTime(value['seq'] ?? data['seq']);
     } catch (e) {
       //
     }
@@ -63,6 +68,7 @@ class DataItem {
     result._name = value['name'] ?? "";
     result._createdAt = data["createdAt"] ?? DateTime.now();
     result._updatedAt = data["updatedAt"];
+    result._seq = data["seq"];
 
     return result;
   }
@@ -136,6 +142,7 @@ extension DataItemExtensionLocal on DataItem {
       "name": _name,
       "createdAt": createdAt,
       "updatedAt": updatedAt,
+      "seq": seq,
     };
   }
 }

@@ -1,3 +1,7 @@
+## 1.0.21
+* Data Query - Enhancement
+* Sequence Data Fix 
+
 ## 1.0.20
 * Data Query - Enhancement
 * delete change to remove

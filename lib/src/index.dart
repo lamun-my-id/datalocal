@@ -53,8 +53,7 @@ class DataLocal {
   int _count = 0;
   int get count => _count;
 
-  int _sequence = 0;
-  int get sequence => _sequence;
+  int get sequence => _container.seq;
 
   late DataContainer _container;
 
@@ -92,7 +91,7 @@ class DataLocal {
         if (res == null) {
           _container = DataContainer(
             name: _name,
-            seq: sequence,
+            seq: 0,
             ids: [],
           );
           throw "tidak ada state";
@@ -214,15 +213,15 @@ class DataLocal {
 
   /// Insert and save DataItem
   Future<DataItem> insertOne(Map<String, dynamic> value, {String? id}) async {
-    _sequence++;
+    _container.seq++;
     DataItem newData = DataItem.create(
       id ??
           EncryptUtil()
-              .encript(DateTime.now().toString() + sequence.toString()),
+              .encript(DateTime.now().toString() + _container.seq.toString()),
       value: value,
       name: stateName,
       parent: "",
-      seq: sequence,
+      seq: _container.seq,
     );
     try {
       _raw[newData.id] = newData;
@@ -240,13 +239,14 @@ class DataLocal {
 
   Future<void> insertMany(List<Map<String, dynamic>> values) async {
     for (Map<String, dynamic> value in values) {
-      _sequence++;
+      _container.seq++;
       DataItem newData = DataItem.create(
-        EncryptUtil().encript(DateTime.now().toString() + sequence.toString()),
+        EncryptUtil()
+            .encript(DateTime.now().toString() + _container.seq.toString()),
         value: value,
         name: stateName,
         parent: "",
-        seq: sequence,
+        seq: _container.seq,
       );
       try {
         _raw[newData.id] = newData;

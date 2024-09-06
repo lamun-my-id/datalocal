@@ -40,6 +40,21 @@ class _MyHomePageState extends State<MyHomePage> {
   // DataQuery? data;
   bool loading = true;
   DataItem? selectedData;
+  DataSort? sort;
+
+  DataSearch search = DataSearch(
+    keys: [DataKey("title"), DataKey("content")],
+    value: "",
+  );
+
+  List<DataSort> sorts = [
+    DataSort(
+        key: DataKey("#createdAt", as: "Tanggal Dibuat (Z-A)"), desc: true),
+    DataSort(
+        key: DataKey("#reatedAt", as: "Tanggal Dibuat (A-Z)"), desc: false),
+    DataSort(key: DataKey("title", as: "Judul (A-Z)"), desc: false),
+    DataSort(key: DataKey("title", as: "Judul (Z-A)"), desc: true),
+  ];
 
   TextEditingController titleController = TextEditingController();
   TextEditingController contentController = TextEditingController();
@@ -197,253 +212,274 @@ class _MyHomePageState extends State<MyHomePage> {
               child: SizedBox(
                 height: height,
                 width: width,
-                child: Builder(builder: (_) {
-                  if (loading) {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                  return FutureBuilder<DataQuery>(
-                    future: state.find(
-                      sorts: [
-                        DataSort(key: DataKey("#createdAt")),
-                      ],
-                      paginate: dpaginate,
-                    ),
-                    builder: (_, snapshot) {
-                      // return const Center(
-                      //   child: CircularProgressIndicator(),
-                      // );
-                      if (!snapshot.hasData) {
-                        return const Center(
-                          child: CircularProgressIndicator(),
-                        );
-                      }
-                      DataQuery data = snapshot.data!;
-                      return Column(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            width: width,
-                            child: Row(
-                              children: [
-                                const Expanded(
-                                  child: SizedBox(),
-                                ),
-                                Text(
-                                  "${(dpaginate.size * (dpaginate.page - 1)) + 1}-${dpaginate.size * dpaginate.page} of ${data.count}",
-                                ),
-                                const SizedBox(
-                                  width: 16,
-                                ),
-                                InkWell(
-                                  onTap: dpaginate.page > 1
-                                      ? () {
-                                          dpaginate.page--;
-                                          // refresh();
-                                          // state.refresh();
-                                          setState(() {});
-                                        }
-                                      : null,
-                                  child: Icon(
-                                    Icons.chevron_left,
-                                    color: dpaginate.page > 1
-                                        ? Colors.black
-                                        : Colors.grey[400],
-                                  ),
-                                ),
-                                const SizedBox(
-                                  width: 16,
-                                ),
-                                Text("${dpaginate.page}"),
-                                const SizedBox(
-                                  width: 16,
-                                ),
-                                InkWell(
-                                  onTap: dpaginate.page <
-                                          data.count / dpaginate.size.ceil()
-                                      ? () {
-                                          dpaginate.page++;
-                                          // refresh();
-                                          setState(() {});
-                                          // state.refresh();
-                                        }
-                                      : null,
-                                  child: Icon(
-                                    Icons.chevron_right,
-                                    color: dpaginate.page <
-                                            data.count / dpaginate.size.ceil()
-                                        ? Colors.black
-                                        : Colors.grey[400],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Expanded(
-                            child: FutureBuilder<DataQuery>(
-                              future: state.find(
-                                sorts: [
-                                  DataSort(key: DataKey("#createdAt")),
-                                ],
-                                paginate: dpaginate,
+                child: Builder(
+                  builder: (_) {
+                    if (loading) {
+                      return const Center(
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    return FutureBuilder<DataQuery>(
+                      future: state.find(
+                        sorts: [
+                          sort ?? sorts[3],
+                        ],
+                        search: (search.value ?? "").isNotEmpty ? search : null,
+                        paginate: dpaginate,
+                      ),
+                      builder: (_, snapshot) {
+                        // return const Center(
+                        //   child: CircularProgressIndicator(),
+                        // );
+                        if (!snapshot.hasData) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        DataQuery data = snapshot.data!;
+                        return Column(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
                               ),
-                              builder: (_, snapshot) {
-                                if (!snapshot.hasData) {
-                                  return const CircularProgressIndicator();
-                                }
-                                List<DataItem> docs = snapshot.data!.data;
-                                return ListView.builder(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
+                              width: width,
+                              child: Row(
+                                children: [
+                                  DropdownButton<DataSort>(
+                                    items: sorts.map((_) {
+                                      return DropdownMenuItem(
+                                        value: _,
+                                        child: Text(_.key.as ?? ""),
+                                      );
+                                    }).toList(),
+                                    onChanged: (_) {
+                                      sort = _;
+                                      setState(() {});
+                                    },
+                                    value: sort ?? sorts.first,
                                   ),
-                                  itemCount: docs.length,
-                                  itemBuilder: (_, index) {
-                                    DataItem data = docs[index];
-                                    return Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 4,
-                                      ),
-                                      child: InkWell(
-                                        onTap: () => openForm(data),
-                                        child: Container(
-                                          width: width,
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 16,
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(10),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              SizedBox(
-                                                width: width,
-                                                child: Text(
-                                                  data.get(DataKey("title")),
-                                                  style: const TextStyle(
-                                                    fontSize: 16,
-                                                    fontWeight: FontWeight.w600,
+                                  const SizedBox(
+                                    width: 16,
+                                  ),
+                                  Expanded(
+                                    child: TextField(
+                                      onChanged: (_) {
+                                        search.value = _;
+                                        setState(() {});
+                                      },
+                                    ),
+                                  ),
+                                  Text(
+                                    "${(dpaginate.size * (dpaginate.page - 1)) + 1}-${dpaginate.size * dpaginate.page} of ${data.count}",
+                                  ),
+                                  const SizedBox(
+                                    width: 16,
+                                  ),
+                                  InkWell(
+                                    onTap: dpaginate.page > 1
+                                        ? () {
+                                            dpaginate.page--;
+                                            // refresh();
+                                            // state.refresh();
+                                            setState(() {});
+                                          }
+                                        : null,
+                                    child: Icon(
+                                      Icons.chevron_left,
+                                      color: dpaginate.page > 1
+                                          ? Colors.black
+                                          : Colors.grey[400],
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    width: 16,
+                                  ),
+                                  Text("${dpaginate.page}"),
+                                  const SizedBox(
+                                    width: 16,
+                                  ),
+                                  InkWell(
+                                    onTap: dpaginate.page <
+                                            data.count / dpaginate.size.ceil()
+                                        ? () {
+                                            dpaginate.page++;
+                                            // refresh();
+                                            setState(() {});
+                                            // state.refresh();
+                                          }
+                                        : null,
+                                    child: Icon(
+                                      Icons.chevron_right,
+                                      color: dpaginate.page <
+                                              data.count / dpaginate.size.ceil()
+                                          ? Colors.black
+                                          : Colors.grey[400],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Builder(
+                                builder: (_) {
+                                  if (!snapshot.hasData) {
+                                    return const CircularProgressIndicator();
+                                  }
+                                  List<DataItem> docs = snapshot.data!.data;
+                                  return ListView.builder(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 8,
+                                    ),
+                                    itemCount: docs.length,
+                                    itemBuilder: (_, index) {
+                                      DataItem data = docs[index];
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 4,
+                                        ),
+                                        child: InkWell(
+                                          onTap: () => openForm(data),
+                                          child: Container(
+                                            width: width,
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 16,
+                                              vertical: 16,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                SizedBox(
+                                                  width: width,
+                                                  child: Text(
+                                                    data.get(DataKey("title")),
+                                                    style: const TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              Text(
-                                                data.get(DataKey("content")),
-                                                maxLines: 3,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                              Container(
-                                                width: width,
-                                                padding: const EdgeInsets.only(
-                                                  top: 8,
-                                                ),
-                                                alignment:
-                                                    Alignment.bottomRight,
-                                                child: Text(
-                                                  data
-                                                      .get(
-                                                          DataKey("#createdAt"))
-                                                      .toString(),
-                                                  textAlign: TextAlign.end,
+                                                Text(
+                                                  data.get(DataKey("content")),
+                                                  maxLines: 3,
                                                   overflow:
                                                       TextOverflow.ellipsis,
-                                                  style: const TextStyle(
-                                                    fontSize: 12,
+                                                ),
+                                                Container(
+                                                  width: width,
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                    top: 8,
+                                                  ),
+                                                  alignment:
+                                                      Alignment.bottomRight,
+                                                  child: Text(
+                                                    data
+                                                        .get(DataKey(
+                                                            "#createdAt"))
+                                                        .toString(),
+                                                    textAlign: TextAlign.end,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                          // Expanded(
-                          //   child: ListView.builder(
-                          //     padding: const EdgeInsets.symmetric(
-                          //       horizontal: 16,
-                          //       vertical: 8,
-                          //     ),
-                          //     itemCount: data!.length,
-                          //     itemBuilder: (_, index) {
-                          //       DataItem data = this.data!.data[index];
-                          //       return Padding(
-                          //         padding: const EdgeInsets.symmetric(
-                          //           vertical: 4,
-                          //         ),
-                          //         child: InkWell(
-                          //           onTap: () => openForm(data),
-                          //           child: Container(
-                          //             width: width,
-                          //             padding: const EdgeInsets.symmetric(
-                          //               horizontal: 16,
-                          //               vertical: 16,
-                          //             ),
-                          //             decoration: BoxDecoration(
-                          //               color: Colors.white,
-                          //               borderRadius: BorderRadius.circular(10),
-                          //             ),
-                          //             child: Column(
-                          //               crossAxisAlignment:
-                          //                   CrossAxisAlignment.start,
-                          //               children: [
-                          //                 SizedBox(
-                          //                   width: width,
-                          //                   child: Text(
-                          //                     data.get(DataKey("title")),
-                          //                     style: const TextStyle(
-                          //                       fontSize: 16,
-                          //                       fontWeight: FontWeight.w600,
-                          //                     ),
-                          //                   ),
-                          //                 ),
-                          //                 Text(
-                          //                   data.get(DataKey("content")),
-                          //                   maxLines: 3,
-                          //                   overflow: TextOverflow.ellipsis,
-                          //                 ),
-                          //                 Container(
-                          //                   width: width,
-                          //                   padding: const EdgeInsets.only(
-                          //                     top: 8,
-                          //                   ),
-                          //                   alignment: Alignment.bottomRight,
-                          //                   child: Text(
-                          //                     data
-                          //                         .get(DataKey("#createdAt"))
-                          //                         .toString(),
-                          //                     textAlign: TextAlign.end,
-                          //                     overflow: TextOverflow.ellipsis,
-                          //                     style: const TextStyle(
-                          //                       fontSize: 12,
-                          //                     ),
-                          //                   ),
-                          //                 ),
-                          //               ],
-                          //             ),
-                          //           ),
-                          //         ),
-                          //       );
-                          //     },
-                          //   ),
-                          // ),
-                        ],
-                      );
-                    },
-                  );
-                }),
+                            // Expanded(
+                            //   child: ListView.builder(
+                            //     padding: const EdgeInsets.symmetric(
+                            //       horizontal: 16,
+                            //       vertical: 8,
+                            //     ),
+                            //     itemCount: data!.length,
+                            //     itemBuilder: (_, index) {
+                            //       DataItem data = this.data!.data[index];
+                            //       return Padding(
+                            //         padding: const EdgeInsets.symmetric(
+                            //           vertical: 4,
+                            //         ),
+                            //         child: InkWell(
+                            //           onTap: () => openForm(data),
+                            //           child: Container(
+                            //             width: width,
+                            //             padding: const EdgeInsets.symmetric(
+                            //               horizontal: 16,
+                            //               vertical: 16,
+                            //             ),
+                            //             decoration: BoxDecoration(
+                            //               color: Colors.white,
+                            //               borderRadius: BorderRadius.circular(10),
+                            //             ),
+                            //             child: Column(
+                            //               crossAxisAlignment:
+                            //                   CrossAxisAlignment.start,
+                            //               children: [
+                            //                 SizedBox(
+                            //                   width: width,
+                            //                   child: Text(
+                            //                     data.get(DataKey("title")),
+                            //                     style: const TextStyle(
+                            //                       fontSize: 16,
+                            //                       fontWeight: FontWeight.w600,
+                            //                     ),
+                            //                   ),
+                            //                 ),
+                            //                 Text(
+                            //                   data.get(DataKey("content")),
+                            //                   maxLines: 3,
+                            //                   overflow: TextOverflow.ellipsis,
+                            //                 ),
+                            //                 Container(
+                            //                   width: width,
+                            //                   padding: const EdgeInsets.only(
+                            //                     top: 8,
+                            //                   ),
+                            //                   alignment: Alignment.bottomRight,
+                            //                   child: Text(
+                            //                     data
+                            //                         .get(DataKey("#createdAt"))
+                            //                         .toString(),
+                            //                     textAlign: TextAlign.end,
+                            //                     overflow: TextOverflow.ellipsis,
+                            //                     style: const TextStyle(
+                            //                       fontSize: 12,
+                            //                     ),
+                            //                   ),
+                            //                 ),
+                            //               ],
+                            //             ),
+                            //           ),
+                            //         ),
+                            //       );
+                            //     },
+                            //   ),
+                            // ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
               ),
             ),
             Expanded(

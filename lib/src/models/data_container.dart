@@ -5,7 +5,7 @@ import 'package:datalocal/utils/date_time.dart';
 class DataContainer {
   String name;
   String? path;
-  int? seq;
+  int seq;
   DateTime? createdAt;
   DateTime? updatedAt;
   List<String> ids;
@@ -13,7 +13,7 @@ class DataContainer {
   DataContainer({
     required this.name,
     this.path,
-    this.seq,
+    this.seq = 0,
     this.createdAt,
     this.updatedAt,
     required this.ids,
@@ -23,7 +23,7 @@ class DataContainer {
     return DataContainer(
       name: value['name'],
       path: value['path'],
-      seq: value['seq'],
+      seq: value['seq'] ?? 0,
       createdAt: DateTimeUtils.toDateTime(value['createdAt']),
       updatedAt: DateTimeUtils.toDateTime(value['createdAt']),
       ids: List<String>.from(value['ids'] ?? []),

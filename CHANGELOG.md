@@ -1,3 +1,12 @@
+## 1.0.20
+* Data Query - Enhancement
+* delete change to remove
+* Remove data fix
+
+## 1.0.19
+* Data Query
+* Pagination Fix
+
 ## 1.0.18
 * Id Fix 
 * Add Sequence

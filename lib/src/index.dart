@@ -5,7 +5,6 @@ import 'package:datalocal/src/extensions/list_data_item.dart';
 import 'package:datalocal/src/models/data_container.dart';
 import 'package:datalocal/src/models/data_filter.dart';
 import 'package:datalocal/src/models/data_item.dart';
-import 'package:datalocal/src/models/data_key.dart';
 import 'package:datalocal/src/models/data_paginate.dart';
 import 'package:datalocal/src/models/data_query.dart';
 import 'package:datalocal/src/models/data_search.dart';
@@ -64,7 +63,7 @@ class DataLocal {
 
   late String _name;
 
-  Map<String, DataItem> _raw = {};
+  final Map<String, DataItem> _raw = {};
   Map<String, DataItem> get raw => _raw;
 
   /// Log DataLocal used on debugMode
@@ -215,10 +214,6 @@ class DataLocal {
 
   /// Insert and save DataItem
   Future<DataItem> insertOne(Map<String, dynamic> value, {String? id}) async {
-    // String id = EncryptUtil().encript(
-    //     DateTimeUtils.dateFormat(DateTime.now(), format: 'yyyyMMddhhmmss') ??
-    //         "");
-    // _log(id);
     _sequence++;
     DataItem newData = DataItem.create(
       id ??
@@ -227,6 +222,7 @@ class DataLocal {
       value: value,
       name: stateName,
       parent: "",
+      seq: sequence,
     );
     try {
       _raw[newData.id] = newData;
@@ -240,6 +236,34 @@ class DataLocal {
       //
     }
     return newData;
+  }
+
+  Future<void> insertMany(List<Map<String, dynamic>> values) async {
+    for (Map<String, dynamic> value in values) {
+      _sequence++;
+      DataItem newData = DataItem.create(
+        EncryptUtil().encript(DateTime.now().toString() + sequence.toString()),
+        value: value,
+        name: stateName,
+        parent: "",
+        seq: sequence,
+      );
+      try {
+        _raw[newData.id] = newData;
+        await newData.save({});
+        _container.ids.add(newData.path());
+        _count = _container.ids.length;
+      } catch (e) {
+        //
+      }
+    }
+    try {
+      refresh();
+      await _saveState();
+    } catch (e) {
+      _log("error disini");
+      //
+    }
   }
 
   /// Update to save DataItem
@@ -258,27 +282,38 @@ class DataLocal {
   }
 
   /// Deletion DataItem
-  Future<void> deleteOne(String id) async {
+  Future<void> removeOne(String id) async {
     try {
-      List<DataItem> d = (await find(
-        filters: [DataFilter(key: DataKey("#id"), value: id)],
-      ))
-          .data;
-      if (d.isEmpty) {
-        throw "Tidak ada data";
-      }
-
-      if (d.isEmpty) throw "Tidak ada data";
-
-      Map<String, dynamic> res = {};
-
-      _raw = res['data'];
-      _container.ids.remove(d.first.path());
-      _count = _container.ids.length;
-
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.remove(EncryptUtil().encript(d.first.path()));
-      _saveState();
+      DataItem? d = _raw[id];
+      if (d == null) {
+        throw "Data with id $id, not found";
+      }
+      _raw.remove(id);
+      _container.ids.remove(id);
+      _count = _container.ids.length;
+      await prefs.remove(EncryptUtil().encript(d.path()));
+    } catch (e, st) {
+      _log('findAsync Isolate.spawn $e, $st');
+    }
+
+    refresh();
+    _saveState();
+  }
+
+  Future<void> removeMany(List<String> ids) async {
+    try {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      for (String id in ids) {
+        DataItem? d = _raw['id'];
+        if (d == null) {
+          throw "Data with id $id, not found";
+        }
+        _raw.remove(id);
+        _container.ids.remove(id);
+        _count = _container.ids.length;
+        await prefs.remove(EncryptUtil().encript(d.path()));
+      }
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
@@ -374,10 +409,14 @@ dynamic _listDataItemFind(List<dynamic> args) {
   }
   Map<String, dynamic> result = {};
   if (paginate != null) {
-    result['page'] = paginate.page;
-    result['pageSize'] = paginate.size;
-    result['count'] = data.length;
-    data = data.paginate(paginate);
+    try {
+      result['page'] = paginate.page;
+      result['pageSize'] = paginate.size;
+      result['count'] = data.length;
+      data = data.paginate(paginate);
+    } catch (e) {
+      //
+    }
   }
   result['length'] = data.length;
   result['data'] = data;

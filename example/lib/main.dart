@@ -37,7 +37,7 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   late DataLocal state;
   DataPaginate dpaginate = DataPaginate(page: 1, size: 30);
-  DataQuery? data;
+  // DataQuery? data;
   bool loading = true;
   DataItem? selectedData;
 
@@ -57,29 +57,29 @@ class _MyHomePageState extends State<MyHomePage> {
         // print("object-handle");
         setState(() {});
       },
-      // debugMode: true,
+      debugMode: true,
     );
-    refresh();
-    state.refresh();
+    // refresh();
+    // state.refresh();
     loading = false;
     setState(() {});
   }
 
-  refresh() {
-    state.onRefresh = () async {
-      data = await state.find(
-        paginate: dpaginate,
-        sorts: [
-          DataSort(
-            key: DataKey("#createdAt"),
-            desc: true,
-          ),
-        ],
-      );
-      // print("object data length ${data!.length} ${dpaginate.page}");
-      setState(() {});
-    };
-  }
+  // refresh() {
+  //   state.onRefresh = () async {
+  //     // data = await state.find(
+  //     //   paginate: dpaginate,
+  //     //   sorts: [
+  //     //     DataSort(
+  //     //       key: DataKey("#createdAt"),
+  //     //       desc: true,
+  //     //     ),
+  //     //   ],
+  //     // );
+  //     // print("object data length ${data!.length} ${dpaginate.page}");
+  //     setState(() {});
+  //   };
+  // }
 
   openForm(DataItem value) {
     selectedData = value;
@@ -154,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
         )) ??
         false;
     if (rmv) {
-      await state.deleteOne(selectedData!.id);
+      await state.removeOne(selectedData!.id);
       selectedData = null;
       titleController.clear();
       contentController.clear();
@@ -165,6 +165,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     double width = MediaQuery.of(context).size.width;
+    double height = MediaQuery.of(context).size.height;
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -182,154 +183,267 @@ class _MyHomePageState extends State<MyHomePage> {
                 });
               }
             },
-            child: Icon(Icons.add),
+            child: const Icon(Icons.add),
           ),
         ],
       ),
       body: SizedBox(
         width: width,
-        height: MediaQuery.of(context).size.height,
+        height: height,
         child: Row(
           children: [
             Expanded(
               flex: 7,
-              child: Builder(
-                builder: (_) {
-                  // return const Center(
-                  //   child: CircularProgressIndicator(),
-                  // );
-                  if (loading || data == null) {
+              child: SizedBox(
+                height: height,
+                width: width,
+                child: Builder(builder: (_) {
+                  if (loading) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
-                  return Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 8,
-                        ),
-                        width: width,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: SizedBox(),
+                  return FutureBuilder<DataQuery>(
+                    future: state.find(
+                      sorts: [
+                        DataSort(key: DataKey("#createdAt")),
+                      ],
+                      paginate: dpaginate,
+                    ),
+                    builder: (_, snapshot) {
+                      // return const Center(
+                      //   child: CircularProgressIndicator(),
+                      // );
+                      if (!snapshot.hasData) {
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      }
+                      DataQuery data = snapshot.data!;
+                      return Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
                             ),
-                            Text(
-                              "${(dpaginate.size * (dpaginate.page - 1)) + 1}-${dpaginate.size * dpaginate.page} of ${data!.count}",
+                            width: width,
+                            child: Row(
+                              children: [
+                                const Expanded(
+                                  child: SizedBox(),
+                                ),
+                                Text(
+                                  "${(dpaginate.size * (dpaginate.page - 1)) + 1}-${dpaginate.size * dpaginate.page} of ${data.count}",
+                                ),
+                                const SizedBox(
+                                  width: 16,
+                                ),
+                                InkWell(
+                                  onTap: dpaginate.page > 1
+                                      ? () {
+                                          dpaginate.page--;
+                                          // refresh();
+                                          // state.refresh();
+                                          setState(() {});
+                                        }
+                                      : null,
+                                  child: Icon(
+                                    Icons.chevron_left,
+                                    color: dpaginate.page > 1
+                                        ? Colors.black
+                                        : Colors.grey[400],
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 16,
+                                ),
+                                Text("${dpaginate.page}"),
+                                const SizedBox(
+                                  width: 16,
+                                ),
+                                InkWell(
+                                  onTap: dpaginate.page <
+                                          data.count / dpaginate.size.ceil()
+                                      ? () {
+                                          dpaginate.page++;
+                                          // refresh();
+                                          setState(() {});
+                                          // state.refresh();
+                                        }
+                                      : null,
+                                  child: Icon(
+                                    Icons.chevron_right,
+                                    color: dpaginate.page <
+                                            data.count / dpaginate.size.ceil()
+                                        ? Colors.black
+                                        : Colors.grey[400],
+                                  ),
+                                ),
+                              ],
                             ),
-                            SizedBox(
-                              width: 16,
-                            ),
-                            InkWell(
-                              onTap: dpaginate.page > 1
-                                  ? () {
-                                      dpaginate.page--;
-                                      refresh();
-                                      setState(() {});
-                                      state.refresh();
-                                    }
-                                  : null,
-                              child: Icon(
-                                Icons.chevron_left,
-                                color: dpaginate.page > 1
-                                    ? Colors.black
-                                    : Colors.grey[400],
-                              ),
-                            ),
-                            SizedBox(
-                              width: 16,
-                            ),
-                            Text("${dpaginate.page}"),
-                            SizedBox(
-                              width: 16,
-                            ),
-                            InkWell(
-                              onTap: dpaginate.page <
-                                      data!.count / dpaginate.size.ceil()
-                                  ? () {
-                                      dpaginate.page++;
-                                      refresh();
-                                      setState(() {});
-                                      state.refresh();
-                                    }
-                                  : null,
-                              child: Icon(
-                                Icons.chevron_right,
-                                color: dpaginate.page <
-                                        data!.count / dpaginate.size.ceil()
-                                    ? Colors.black
-                                    : Colors.grey[400],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
                           ),
-                          itemCount: data!.length,
-                          itemBuilder: (_, index) {
-                            DataItem data = this.data!.data[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 4,
+                          Expanded(
+                            child: FutureBuilder<DataQuery>(
+                              future: state.find(
+                                sorts: [
+                                  DataSort(key: DataKey("#createdAt")),
+                                ],
+                                paginate: dpaginate,
                               ),
-                              child: InkWell(
-                                onTap: () => openForm(data),
-                                child: Container(
-                                  width: width,
+                              builder: (_, snapshot) {
+                                if (!snapshot.hasData) {
+                                  return const CircularProgressIndicator();
+                                }
+                                List<DataItem> docs = snapshot.data!.data;
+                                return ListView.builder(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
-                                    vertical: 16,
+                                    vertical: 8,
                                   ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      SizedBox(
-                                        width: width,
-                                        child: Text(
-                                          data.get(DataKey("title")),
-                                          style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
+                                  itemCount: docs.length,
+                                  itemBuilder: (_, index) {
+                                    DataItem data = docs[index];
+                                    return Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 4,
+                                      ),
+                                      child: InkWell(
+                                        onTap: () => openForm(data),
+                                        child: Container(
+                                          width: width,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 16,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              SizedBox(
+                                                width: width,
+                                                child: Text(
+                                                  data.get(DataKey("title")),
+                                                  style: const TextStyle(
+                                                    fontSize: 16,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                              Text(
+                                                data.get(DataKey("content")),
+                                                maxLines: 3,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              Container(
+                                                width: width,
+                                                padding: const EdgeInsets.only(
+                                                  top: 8,
+                                                ),
+                                                alignment:
+                                                    Alignment.bottomRight,
+                                                child: Text(
+                                                  data
+                                                      .get(
+                                                          DataKey("#createdAt"))
+                                                      .toString(),
+                                                  textAlign: TextAlign.end,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
                                           ),
                                         ),
                                       ),
-                                      Text(
-                                        data.get(DataKey("content")),
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      // Text(
-                                      //   DateTimeUtils.dateFormat(
-                                      //           data.get("createdAt")) ??
-                                      //       "",
-                                      //   overflow: TextOverflow.ellipsis,
-                                      //   style: const TextStyle(
-                                      //     fontSize: 12,
-                                      //   ),
-                                      // ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                                    );
+                                  },
+                                );
+                              },
+                            ),
+                          ),
+                          // Expanded(
+                          //   child: ListView.builder(
+                          //     padding: const EdgeInsets.symmetric(
+                          //       horizontal: 16,
+                          //       vertical: 8,
+                          //     ),
+                          //     itemCount: data!.length,
+                          //     itemBuilder: (_, index) {
+                          //       DataItem data = this.data!.data[index];
+                          //       return Padding(
+                          //         padding: const EdgeInsets.symmetric(
+                          //           vertical: 4,
+                          //         ),
+                          //         child: InkWell(
+                          //           onTap: () => openForm(data),
+                          //           child: Container(
+                          //             width: width,
+                          //             padding: const EdgeInsets.symmetric(
+                          //               horizontal: 16,
+                          //               vertical: 16,
+                          //             ),
+                          //             decoration: BoxDecoration(
+                          //               color: Colors.white,
+                          //               borderRadius: BorderRadius.circular(10),
+                          //             ),
+                          //             child: Column(
+                          //               crossAxisAlignment:
+                          //                   CrossAxisAlignment.start,
+                          //               children: [
+                          //                 SizedBox(
+                          //                   width: width,
+                          //                   child: Text(
+                          //                     data.get(DataKey("title")),
+                          //                     style: const TextStyle(
+                          //                       fontSize: 16,
+                          //                       fontWeight: FontWeight.w600,
+                          //                     ),
+                          //                   ),
+                          //                 ),
+                          //                 Text(
+                          //                   data.get(DataKey("content")),
+                          //                   maxLines: 3,
+                          //                   overflow: TextOverflow.ellipsis,
+                          //                 ),
+                          //                 Container(
+                          //                   width: width,
+                          //                   padding: const EdgeInsets.only(
+                          //                     top: 8,
+                          //                   ),
+                          //                   alignment: Alignment.bottomRight,
+                          //                   child: Text(
+                          //                     data
+                          //                         .get(DataKey("#createdAt"))
+                          //                         .toString(),
+                          //                     textAlign: TextAlign.end,
+                          //                     overflow: TextOverflow.ellipsis,
+                          //                     style: const TextStyle(
+                          //                       fontSize: 12,
+                          //                     ),
+                          //                   ),
+                          //                 ),
+                          //               ],
+                          //             ),
+                          //           ),
+                          //         ),
+                          //       );
+                          //     },
+                          //   ),
+                          // ),
+                        ],
+                      );
+                    },
                   );
-                },
+                }),
               ),
             ),
             Expanded(

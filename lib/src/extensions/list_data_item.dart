@@ -3,6 +3,7 @@ import 'package:datalocal/src/extensions/list.dart';
 import 'package:datalocal/src/models/data_filter.dart';
 import 'package:datalocal/src/models/data_item.dart';
 import 'package:datalocal/src/models/data_key.dart';
+import 'package:datalocal/src/models/data_paginate.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
 import 'package:datalocal/utils/date_time.dart';
@@ -241,9 +242,9 @@ extension ListDataItem on List<DataItem> {
   }
 
   // default page number is 1 and size is 30
-  List<DataItem> paginate({int page = 1, int size = 30}) {
-    List<List<DataItem>> data = List<List<DataItem>>.from(chunks(size));
-    if (page < 1) throw "Page ready at 1 to ${data.length}";
-    return data[page - 1];
+  List<DataItem> paginate(DataPaginate value) {
+    List<List<DataItem>> data = List<List<DataItem>>.from(chunks(value.size));
+    if (value.page < 1) throw "Page ready at 1 to ${data.length}";
+    return data[value.page - 1];
   }
 }

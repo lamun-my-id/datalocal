@@ -6,6 +6,8 @@ import 'package:datalocal/src/models/data_container.dart';
 import 'package:datalocal/src/models/data_filter.dart';
 import 'package:datalocal/src/models/data_item.dart';
 import 'package:datalocal/src/models/data_key.dart';
+import 'package:datalocal/src/models/data_paginate.dart';
+import 'package:datalocal/src/models/data_query.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
 // import 'package:datalocal/utils/date_time.dart';
@@ -181,27 +183,34 @@ class DataLocal {
   void dispose() {}
 
   /// Find More Efective Data with this function
-  Future<List<DataItem>> find({
+  Future<DataQuery> find({
     List<DataFilter>? filters,
     List<DataSort>? sorts,
     DataSearch? search,
+    DataPaginate? paginate,
   }) async {
     // _log('findAsync Isolate.spawn');
     Map<String, dynamic> res = {};
     try {
       if (kIsWeb) {
-        res = _listDataItemFind([null, _raw, filters, sorts, search]);
+        res = _listDataItemFind([null, _raw, filters, sorts, search, paginate]);
       } else {
         ReceivePort rPort = ReceivePort();
-        await Isolate.spawn(
-            _listDataItemFind, [rPort.sendPort, _raw, filters, sorts, search]);
+        await Isolate.spawn(_listDataItemFind,
+            [rPort.sendPort, _raw, filters, sorts, search, paginate]);
         res = await rPort.first;
         rPort.close();
       }
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
-    return res['data'];
+    return DataQuery(
+      data: res['data'],
+      length: res['length'],
+      count: res['count'],
+      page: res['page'],
+      pageSize: res['pageSize'],
+    );
   }
 
   /// Insert and save DataItem
@@ -251,9 +260,10 @@ class DataLocal {
   /// Deletion DataItem
   Future<void> deleteOne(String id) async {
     try {
-      List<DataItem> d = await find(
+      List<DataItem> d = (await find(
         filters: [DataFilter(key: DataKey("#id"), value: id)],
-      );
+      ))
+          .data;
       if (d.isEmpty) {
         throw "Tidak ada data";
       }
@@ -349,23 +359,33 @@ dynamic _listDataItemFind(List<dynamic> args) {
   List<DataFilter>? filters = args[2];
   List<DataSort>? sorts = args[3];
   DataSearch? search = args[4];
+  DataPaginate? paginate = args[5];
 
-  List<DataItem> result = raw.entries.map((entry) => entry.value).toList();
+  List<DataItem> data = raw.entries.map((entry) => entry.value).toList();
 
   if (filters != null) {
-    result = result.filterData(filters);
+    data = data.filterData(filters);
   }
   if (sorts != null) {
-    result = result.sortData(sorts);
+    data = data.sortData(sorts);
   }
   if (search != null) {
-    result = result.searchData(search);
+    data = data.searchData(search);
   }
+  Map<String, dynamic> result = {};
+  if (paginate != null) {
+    result['page'] = paginate.page;
+    result['pageSize'] = paginate.size;
+    result['count'] = data.length;
+    data = data.paginate(paginate);
+  }
+  result['length'] = data.length;
+  result['data'] = data;
   if (kIsWeb) {
-    return {"data": result, "count": result.length};
+    return result;
   } else {
     SendPort port = args[0];
-    Isolate.exit(port, {"data": result, "count": result.length});
+    Isolate.exit(port, result);
   }
 }
 

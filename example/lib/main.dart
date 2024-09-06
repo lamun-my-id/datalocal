@@ -36,7 +36,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late DataLocal state;
-  List<DataItem> data = [];
+  DataPaginate dpaginate = DataPaginate(page: 1, size: 30);
+  DataQuery? data;
   bool loading = true;
   DataItem? selectedData;
 
@@ -58,8 +59,16 @@ class _MyHomePageState extends State<MyHomePage> {
       },
       // debugMode: true,
     );
+    refresh();
+    state.refresh();
+    loading = false;
+    setState(() {});
+  }
+
+  refresh() {
     state.onRefresh = () async {
       data = await state.find(
+        paginate: dpaginate,
         sorts: [
           DataSort(
             key: DataKey("#createdAt"),
@@ -67,12 +76,9 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
         ],
       );
-      print("object data length ${data.length}");
+      // print("object data length ${data!.length} ${dpaginate.page}");
       setState(() {});
     };
-    state.refresh();
-    loading = false;
-    setState(() {});
   }
 
   openForm(DataItem value) {
@@ -189,22 +195,86 @@ class _MyHomePageState extends State<MyHomePage> {
               flex: 7,
               child: Builder(
                 builder: (_) {
-                  if (loading) {
+                  // return const Center(
+                  //   child: CircularProgressIndicator(),
+                  // );
+                  if (loading || data == null) {
                     return const Center(
                       child: CircularProgressIndicator(),
                     );
                   }
                   return Column(
                     children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        width: width,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(),
+                            ),
+                            Text(
+                              "${(dpaginate.size * (dpaginate.page - 1)) + 1}-${dpaginate.size * dpaginate.page} of ${data!.count}",
+                            ),
+                            SizedBox(
+                              width: 16,
+                            ),
+                            InkWell(
+                              onTap: dpaginate.page > 1
+                                  ? () {
+                                      dpaginate.page--;
+                                      refresh();
+                                      setState(() {});
+                                      state.refresh();
+                                    }
+                                  : null,
+                              child: Icon(
+                                Icons.chevron_left,
+                                color: dpaginate.page > 1
+                                    ? Colors.black
+                                    : Colors.grey[400],
+                              ),
+                            ),
+                            SizedBox(
+                              width: 16,
+                            ),
+                            Text("${dpaginate.page}"),
+                            SizedBox(
+                              width: 16,
+                            ),
+                            InkWell(
+                              onTap: dpaginate.page <
+                                      data!.count / dpaginate.size.ceil()
+                                  ? () {
+                                      dpaginate.page++;
+                                      refresh();
+                                      setState(() {});
+                                      state.refresh();
+                                    }
+                                  : null,
+                              child: Icon(
+                                Icons.chevron_right,
+                                color: dpaginate.page <
+                                        data!.count / dpaginate.size.ceil()
+                                    ? Colors.black
+                                    : Colors.grey[400],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                       Expanded(
                         child: ListView.builder(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 16,
                             vertical: 8,
                           ),
-                          itemCount: data.length,
+                          itemCount: data!.length,
                           itemBuilder: (_, index) {
-                            DataItem data = this.data[index];
+                            DataItem data = this.data!.data[index];
                             return Padding(
                               padding: const EdgeInsets.symmetric(
                                 vertical: 4,

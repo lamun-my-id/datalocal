@@ -1,3 +1,6 @@
+## 1.0.22
+* Fix count 
+
 ## 1.0.21
 * Data Query - Enhancement
 * Sequence Data Fix 

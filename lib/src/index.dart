@@ -408,11 +408,11 @@ dynamic _listDataItemFind(List<dynamic> args) {
     data = data.searchData(search);
   }
   Map<String, dynamic> result = {};
+  result['count'] = data.length;
   if (paginate != null) {
     try {
       result['page'] = paginate.page;
       result['pageSize'] = paginate.size;
-      result['count'] = data.length;
       data = data.paginate(paginate);
     } catch (e) {
       //

@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
     DataSort(
         key: DataKey("#createdAt", as: "Tanggal Dibuat (Z-A)"), desc: true),
     DataSort(
-        key: DataKey("#reatedAt", as: "Tanggal Dibuat (A-Z)"), desc: false),
+        key: DataKey("#createdAt", as: "Tanggal Dibuat (A-Z)"), desc: false),
     DataSort(key: DataKey("title", as: "Judul (A-Z)"), desc: false),
     DataSort(key: DataKey("title", as: "Judul (Z-A)"), desc: true),
   ];

@@ -103,6 +103,7 @@ extension DataItemExtensionLocal on DataItem {
 
   Future<void> save(Map<String, dynamic> value) async {
     _data = {..._data, ...value};
+    _updatedAt = DateTime.now();
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
       prefs.setString(

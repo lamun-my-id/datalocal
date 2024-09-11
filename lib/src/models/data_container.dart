@@ -8,6 +8,8 @@ class DataContainer {
   int seq;
   DateTime? createdAt;
   DateTime? updatedAt;
+  DateTime? lastDataCreatedAt;
+  DateTime? lastDataUpdatedAt;
   List<String> ids;
 
   DataContainer({
@@ -16,6 +18,8 @@ class DataContainer {
     this.seq = 0,
     this.createdAt,
     this.updatedAt,
+    this.lastDataCreatedAt,
+    this.lastDataUpdatedAt,
     required this.ids,
   });
 
@@ -26,6 +30,8 @@ class DataContainer {
       seq: value['seq'] ?? 0,
       createdAt: DateTimeUtils.toDateTime(value['createdAt']),
       updatedAt: DateTimeUtils.toDateTime(value['createdAt']),
+      lastDataCreatedAt: DateTimeUtils.toDateTime(value['lastDataCreatedAt']),
+      lastDataUpdatedAt: DateTimeUtils.toDateTime(value['lastDataUpdatedAt']),
       ids: List<String>.from(value['ids'] ?? []),
     );
   }
@@ -50,6 +56,8 @@ class DataContainer {
       "seq": seq,
       "createdAt": createdAt,
       "updatedAt": updatedAt,
+      "lastDataCreatedAt": lastDataCreatedAt,
+      "lastDataUpdatedAt": lastDataUpdatedAt,
       "ids": ids,
     };
   }

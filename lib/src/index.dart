@@ -228,6 +228,7 @@ class DataLocal {
       refresh();
       await newData.save({});
       _container.ids.add(newData.path());
+      _container.lastDataCreatedAt = newData.createdAt;
       _count = _container.ids.length;
       await _saveState();
     } catch (e) {
@@ -252,6 +253,7 @@ class DataLocal {
         _raw[newData.id] = newData;
         await newData.save({});
         _container.ids.add(newData.path());
+        _container.lastDataCreatedAt = newData.createdAt;
         _count = _container.ids.length;
       } catch (e) {
         //
@@ -275,7 +277,8 @@ class DataLocal {
       _log('findAsync Isolate.spawn $e, $st');
     }
 
-    _raw[id]!.save(value);
+    await _raw[id]!.save(value);
+    _container.lastDataUpdatedAt = _raw[id]?.updatedAt;
     refresh();
     _saveState();
     return _raw[id]!;

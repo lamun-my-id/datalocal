@@ -11,6 +11,7 @@ class DataContainer {
   DateTime? lastDataCreatedAt;
   DateTime? lastDataUpdatedAt;
   List<String> ids;
+  Map<String, dynamic> params;
 
   DataContainer({
     required this.name,
@@ -21,7 +22,8 @@ class DataContainer {
     this.lastDataCreatedAt,
     this.lastDataUpdatedAt,
     required this.ids,
-  });
+    Map<String, dynamic>? param,
+  }) : params = param ?? {};
 
   factory DataContainer.fromMap(Map<String, dynamic> value) {
     return DataContainer(
@@ -33,6 +35,7 @@ class DataContainer {
       lastDataCreatedAt: DateTimeUtils.toDateTime(value['lastDataCreatedAt']),
       lastDataUpdatedAt: DateTimeUtils.toDateTime(value['lastDataUpdatedAt']),
       ids: List<String>.from(value['ids'] ?? []),
+      param: value['param'],
     );
   }
 
@@ -59,6 +62,7 @@ class DataContainer {
       "lastDataCreatedAt": lastDataCreatedAt,
       "lastDataUpdatedAt": lastDataUpdatedAt,
       "ids": ids,
+      "param": params,
     };
   }
 }

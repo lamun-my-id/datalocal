@@ -1,3 +1,7 @@
+## 1.0.24
+* Adding Param for dynamic data saved in data container
+
+
 ## 1.0.23
 * Adding Last Data Created At and Last Data Updated At for container
 

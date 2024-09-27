@@ -32,6 +32,9 @@ class DataItem {
   int? _seq;
   int? get seq => _seq;
 
+  List<DataFile> _files = [];
+  List<DataFile> get files => _files;
+
   /// Used by [DataLocal] data
   DataItem() {
     _createdAt = DateTime.now();
@@ -60,6 +63,7 @@ class DataItem {
       data["deletedAt"] =
           DateTimeUtils.toDateTime(value['deletedAt'] ?? data['deletedAt']);
       data["seq"] = DateTimeUtils.toDateTime(value['seq'] ?? data['seq']);
+      data['files'] = List<Map<String, dynamic>>.from(value['files']);
     } catch (e) {
       //
     }
@@ -72,6 +76,13 @@ class DataItem {
     result._createdAt = data["createdAt"] ?? DateTime.now();
     result._updatedAt = data["updatedAt"];
     result._seq = data["seq"];
+    try {
+      result._files = List<Map<String, dynamic>>.from(value['files'] ?? [])
+          .map((_) => DataFile.fromMap(Map<String, dynamic>.from(_)))
+          .toList();
+    } catch (e) {
+      //
+    }
 
     return result;
   }
@@ -107,8 +118,6 @@ class DataItem {
     await save({}, datalocal: datalocal);
     await file.saveBytes(value);
   }
-
-  List<DataFile> files = [];
 }
 
 extension DataItemExtensionLocal on DataItem {
@@ -211,15 +220,11 @@ class DataFile {
   }
 
   factory DataFile.fromMap(Map<String, dynamic> value) {
-    Map<String, dynamic> data = Map<String, dynamic>.from(value['data']);
     try {
-      data["createdAt"] =
-          DateTimeUtils.toDateTime(value['createdAt'] ?? data['createdAt']);
-      data["updatedAt"] =
-          DateTimeUtils.toDateTime(value['updatedAt'] ?? data['updatedAt']);
-      data["deletedAt"] =
-          DateTimeUtils.toDateTime(value['deletedAt'] ?? data['deletedAt']);
-      data["seq"] = DateTimeUtils.toDateTime(value['seq'] ?? data['seq']);
+      value["createdAt"] = DateTimeUtils.toDateTime(value['createdAt']);
+      value["updatedAt"] = DateTimeUtils.toDateTime(value['updatedAt']);
+      value["deletedAt"] = DateTimeUtils.toDateTime(value['deletedAt']);
+      value["seq"] = DateTimeUtils.toDateTime(value['seq']);
     } catch (e) {
       //
     }
@@ -228,8 +233,8 @@ class DataFile {
     result._id = value['id'] ?? "";
     result._parent = value['parent'] ?? "";
     result._name = value['name'] ?? "";
-    result._createdAt = data["createdAt"] ?? DateTime.now();
-    result._updatedAt = data["updatedAt"];
+    result._createdAt = value["createdAt"] ?? DateTime.now();
+    result._updatedAt = value["updatedAt"];
 
     return result;
   }

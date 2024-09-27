@@ -1,3 +1,15 @@
+## 1.0.30
+* Bug fix load data item contains data file
+
+## 1.0.29
+* Bug fix load data item
+
+## 1.0.28
+* Bug fix loaded file
+
+## 1.0.27
+* Update dependency
+
 ## 1.0.26
 * Need save file to local? save file now to local with datalocal
 

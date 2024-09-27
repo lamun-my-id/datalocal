@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:isolate';
 
 import 'package:datalocal/src/extensions/list_data_item.dart';
 import 'package:datalocal/src/models/data_container.dart';
@@ -9,6 +8,7 @@ import 'package:datalocal/src/models/data_paginate.dart';
 import 'package:datalocal/src/models/data_query.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
+import 'package:datalocal/utils/compute.dart';
 // import 'package:datalocal/utils/date_time.dart';
 import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter/foundation.dart';
@@ -180,6 +180,11 @@ class DataLocal {
 
   void dispose() {}
 
+  Future<DataItem?> get(String id) async {
+    // _log('findAsync Isolate.spawn');
+    return _raw[id];
+  }
+
   /// Find More Efective Data with this function
   Future<DataQuery> find({
     List<DataFilter>? filters,
@@ -190,15 +195,39 @@ class DataLocal {
     // _log('findAsync Isolate.spawn');
     Map<String, dynamic> res = {};
     try {
-      if (kIsWeb) {
-        res = _listDataItemFind([null, _raw, filters, sorts, search, paginate]);
-      } else {
-        ReceivePort rPort = ReceivePort();
-        await Isolate.spawn(_listDataItemFind,
-            [rPort.sendPort, _raw, filters, sorts, search, paginate]);
-        res = await rPort.first;
-        rPort.close();
-      }
+      res = await DataCompute().isolate((args) async {
+        Map<String, DataItem> raw = Map<String, DataItem>.from(args[0]);
+        List<DataFilter>? filters = args[1];
+        List<DataSort>? sorts = args[2];
+        DataSearch? search = args[3];
+        DataPaginate? paginate = args[4];
+
+        List<DataItem> data = raw.entries.map((entry) => entry.value).toList();
+
+        if (filters != null) {
+          data = data.filterData(filters);
+        }
+        if (sorts != null) {
+          data = data.sortData(sorts);
+        }
+        if (search != null) {
+          data = data.searchData(search);
+        }
+        Map<String, dynamic> result = {};
+        result['count'] = data.length;
+        if (paginate != null) {
+          try {
+            result['page'] = paginate.page;
+            result['pageSize'] = paginate.size;
+            data = data.paginate(paginate);
+          } catch (e) {
+            //
+          }
+        }
+        result['length'] = data.length;
+        result['data'] = data;
+        return result;
+      }, args: [_raw, filters, sorts, search, paginate]);
     } catch (e, st) {
       _log('findAsync Isolate.spawn $e, $st');
     }
@@ -392,44 +421,6 @@ class DataLocal {
 // }
 
 /// Find List DataItem
-dynamic _listDataItemFind(List<dynamic> args) {
-  Map<String, DataItem> raw = Map<String, DataItem>.from(args[1]);
-  List<DataFilter>? filters = args[2];
-  List<DataSort>? sorts = args[3];
-  DataSearch? search = args[4];
-  DataPaginate? paginate = args[5];
-
-  List<DataItem> data = raw.entries.map((entry) => entry.value).toList();
-
-  if (filters != null) {
-    data = data.filterData(filters);
-  }
-  if (sorts != null) {
-    data = data.sortData(sorts);
-  }
-  if (search != null) {
-    data = data.searchData(search);
-  }
-  Map<String, dynamic> result = {};
-  result['count'] = data.length;
-  if (paginate != null) {
-    try {
-      result['page'] = paginate.page;
-      result['pageSize'] = paginate.size;
-      data = data.paginate(paginate);
-    } catch (e) {
-      //
-    }
-  }
-  result['length'] = data.length;
-  result['data'] = data;
-  if (kIsWeb) {
-    return result;
-  } else {
-    SendPort port = args[0];
-    Isolate.exit(port, result);
-  }
-}
 
 /// Convert List<DataItem> to json
 // dynamic _listDataItemToJson(List<dynamic> args) {

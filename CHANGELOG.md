@@ -1,6 +1,11 @@
+## 1.0.26
+* Need save file to local? save file now to local with datalocal
+
+## 1.0.25
+* Add Function get one data with simple query
+
 ## 1.0.24
 * Adding Param for dynamic data saved in data container
-
 
 ## 1.0.23
 * Adding Last Data Created At and Last Data Updated At for container

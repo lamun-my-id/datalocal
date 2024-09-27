@@ -54,6 +54,9 @@ extension DataItemExtension on DataItem {
     );
   }
 
+  // Future<void> load() async {}
+  // Future<void> update() async {}
+
   // Future<void> update(Map<String, dynamic> value) async {
   //   _data = {..._data, ...value};
   //   try {

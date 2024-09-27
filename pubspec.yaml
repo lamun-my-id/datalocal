@@ -1,7 +1,7 @@
 name: datalocal
 description: "Flutter dependency to save data via local saved with state, easy to use and fast."
 repository: "https://github.com/lamun-my-id/datalocal.git"
-version: 1.0.24
+version: 1.0.26
 # test    : dart pub publish --dry-run
 # deploy  : dart pub publish 
 

@@ -18,15 +18,20 @@ enum DataFilterOperator {
 /// Used separated with dot '.' to sort data inside map variable
 /// Use [operator] to filter more flexible
 class DataFilter {
-  DataKey key;
+  late DataKey key;
   dynamic value;
   DataFilterOperator operator;
 
-  DataFilter({
-    required this.key,
+  DataFilter(
+    Object key, {
     this.operator = DataFilterOperator.isEqualTo,
     this.value = "",
-  });
+  }) {
+    assert((key is String || key is DataKey),
+        "Please fill key with String or DataKey value");
+    if (key is String) this.key = DataKey(key);
+    if (key is DataKey) this.key = key;
+  }
 
   String operatorInText() {
     switch (operator) {

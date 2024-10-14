@@ -43,17 +43,15 @@ class _MyHomePageState extends State<MyHomePage> {
   DataSort? sort;
 
   DataSearch search = DataSearch(
-    keys: [DataKey("title"), DataKey("content")],
+    ["title", "content"],
     value: "",
   );
 
   List<DataSort> sorts = [
-    DataSort(
-        key: DataKey("#createdAt", as: "Tanggal Dibuat (Z-A)"), desc: true),
-    DataSort(
-        key: DataKey("#createdAt", as: "Tanggal Dibuat (A-Z)"), desc: false),
-    DataSort(key: DataKey("title", as: "Judul (A-Z)"), desc: false),
-    DataSort(key: DataKey("title", as: "Judul (Z-A)"), desc: true),
+    DataSort(DataKey("#createdAt", as: "Tanggal Dibuat (Z-A)"), desc: true),
+    DataSort(DataKey("#createdAt", as: "Tanggal Dibuat (A-Z)"), desc: false),
+    DataSort(DataKey("title", as: "Judul (A-Z)"), desc: false),
+    DataSort(DataKey("title", as: "Judul (Z-A)"), desc: true),
   ];
 
   TextEditingController titleController = TextEditingController();
@@ -98,8 +96,8 @@ class _MyHomePageState extends State<MyHomePage> {
 
   openForm(DataItem value) {
     selectedData = value;
-    titleController.text = value.get(DataKey('title'));
-    contentController.text = value.get(DataKey("content"));
+    titleController.text = value.get('title');
+    contentController.text = value.get("content");
     setState(() {});
   }
 
@@ -360,7 +358,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                 SizedBox(
                                                   width: width,
                                                   child: Text(
-                                                    data.get(DataKey("title")),
+                                                    data.get("title"),
                                                     style: const TextStyle(
                                                       fontSize: 16,
                                                       fontWeight:
@@ -369,7 +367,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                   ),
                                                 ),
                                                 Text(
-                                                  data.get(DataKey("content")),
+                                                  data.get("content"),
                                                   maxLines: 3,
                                                   overflow:
                                                       TextOverflow.ellipsis,
@@ -384,8 +382,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                                       Alignment.bottomRight,
                                                   child: Text(
                                                     data
-                                                        .get(DataKey(
-                                                            "#createdAt"))
+                                                        .get("#createdAt")
                                                         .toString(),
                                                     textAlign: TextAlign.end,
                                                     overflow:

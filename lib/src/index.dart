@@ -1,17 +1,12 @@
 import 'dart:convert';
 
+import 'package:datalocal/datalocal.dart';
 import 'package:datalocal/src/extensions/list_data_item.dart';
-import 'package:datalocal/src/models/data_container.dart';
-import 'package:datalocal/src/models/data_filter.dart';
-import 'package:datalocal/src/models/data_item.dart';
-import 'package:datalocal/src/models/data_paginate.dart';
-import 'package:datalocal/src/models/data_query.dart';
-import 'package:datalocal/src/models/data_search.dart';
-import 'package:datalocal/src/models/data_sort.dart';
-import 'package:datalocal/utils/compute.dart';
+import 'package:datalocal/src/models/data_compute.dart';
 // import 'package:datalocal/utils/date_time.dart';
 import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DataLocal {
@@ -68,13 +63,18 @@ class DataLocal {
   /// Log DataLocal used on debugMode
   _log(dynamic arg) async {
     if (_debugMode) {
-      debugPrint('DataLocal (Debug): ${arg.toString()}');
+      debugPrint('DataLocal (Debug):[$stateName]> ${arg.toString()}');
     }
   }
 
   // Function
   /// Used to initialize DataLocal
   _initialize() async {
+    try {
+      await initializeDateFormatting();
+    } catch (e) {
+      //
+    }
     try {
       _name = EncryptUtil().encript(
         "DataLocal-$stateName",
@@ -158,11 +158,10 @@ class DataLocal {
     refresh();
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await (prefs.remove(EncryptUtil().encript(_name)));
+    for (String id in _container.ids) {
+      await prefs.remove(EncryptUtil().encript(id));
 
-    for (int i = 0; i < _container.ids.length; i++) {
-      await (prefs
-          .remove(EncryptUtil().encript(_raw[_container.ids[i]]!.path())));
-      _raw.remove(_container.ids[i]);
+      _raw.remove(id);
     }
     _isLoading = false;
     refresh();
@@ -361,6 +360,8 @@ class DataLocal {
     await _initialize();
   }
 }
+
+
 
 /// Convert Json to List<DataItem>
 // dynamic _jsonToListDataItem(List<dynamic> args) {

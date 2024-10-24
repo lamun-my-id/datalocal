@@ -3,7 +3,7 @@ import 'dart:typed_data';
 
 import 'package:datalocal/datalocal.dart';
 import 'package:datalocal/src/extensions/data_item.dart';
-import 'package:datalocal/utils/compute.dart';
+import 'package:datalocal/src/models/data_compute.dart';
 import 'package:datalocal/utils/date_time.dart';
 import 'package:datalocal/utils/encrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -56,12 +56,12 @@ class DataItem {
   factory DataItem.fromMap(Map<String, dynamic> value) {
     Map<String, dynamic> data = Map<String, dynamic>.from(value['data']);
     try {
-      data["createdAt"] =
-          DateTimeUtils.toDateTime(value['createdAt'] ?? data['createdAt']);
-      data["updatedAt"] =
-          DateTimeUtils.toDateTime(value['updatedAt'] ?? data['updatedAt']);
-      data["deletedAt"] =
-          DateTimeUtils.toDateTime(value['deletedAt'] ?? data['deletedAt']);
+      // data["createdAt"] =
+      //     DateTimeUtils.toDateTime(value['createdAt'] ?? data['createdAt']);
+      // data["updatedAt"] =
+      //     DateTimeUtils.toDateTime(value['updatedAt'] ?? data['updatedAt']);
+      // data["deletedAt"] =
+      //     DateTimeUtils.toDateTime(value['deletedAt'] ?? data['deletedAt']);
       data["seq"] = DateTimeUtils.toDateTime(value['seq'] ?? data['seq']);
       data['files'] = List<Map<String, dynamic>>.from(value['files']);
     } catch (e) {
@@ -73,8 +73,15 @@ class DataItem {
     result._data = data;
     result._parent = value['parent'] ?? "";
     result._name = value['name'] ?? "";
-    result._createdAt = data["createdAt"] ?? DateTime.now();
-    result._updatedAt = data["updatedAt"];
+    try {
+      result._createdAt = DateTimeUtils.toDateTime(
+              value['createdAt'] ?? data['#']['createdAt']) ??
+          DateTime.now();
+      result._updatedAt = DateTimeUtils.toDateTime(
+          value['updatedAt'] ?? data['#']['#updatedAt']);
+    } catch (e) {
+      //
+    }
     result._seq = data["seq"];
     try {
       result._files = List<Map<String, dynamic>>.from(value['files'] ?? [])

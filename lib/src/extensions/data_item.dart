@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:datalocal/src/models/data_item.dart';
 import 'package:datalocal/src/models/data_key.dart';
+import 'package:datalocal/src/models/data_row.dart';
 import 'package:datalocal/utils/date_time.dart';
 import 'package:datalocal/utils/encrypt.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,9 +12,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 extension DataItemExtension on DataItem {
   dynamic get(Object key) {
     DataKey k;
+
     if (key is String) {
       k = DataKey(key);
     } else {
+      if (key is DataSelectDate) {
+        return DateTimeUtils.dateFormat(get(key.key), format: key.format);
+      }
       if ((key is! DataKey)) {
         throw "Please fill key with String or DataKey value";
       }

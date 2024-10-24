@@ -59,8 +59,8 @@ extension ListDataItem on List<DataItem> {
       }
       return temp.expand((element) => element).toList();
     }
-    Set<String> ids = map((e) => e.id).toSet();
-    retainWhere((x) => ids.remove(x.id));
+    // Set<String> ids = map((e) => e.id).toSet();
+    // retainWhere((x) => ids.remove(x.id));
 
     return this;
   }
@@ -74,110 +74,209 @@ extension ListDataItem on List<DataItem> {
       DataItem d = result[index];
       for (DataFilter f in parameters) {
         try {
-          switch (f.operator) {
-            case DataFilterOperator.isEqualTo:
-              if (d.get(f.key) == f.value) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.isNotEqualTo:
-              if (d.get(f.key) != f.value) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.isGreaterThanOrEqualTo:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) >= f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.isGreaterThan:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) > f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.isLessThanOrEqualTo:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isBefore(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) <= f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.isLessThan:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isBefore(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) < f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.whereIn:
-              if ((f.value as List).contains(d.get(f.key))) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.whereNotIn:
-              if (!(f.value as List).contains(d.get(f.key))) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.arrayContains:
-              if (((d.get(f.key) ?? []) as List).contains(f.value)) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.arrayContainsAny:
-              if (((d.get(f.key) ?? []) as List).containAny(f.value as List)) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.isNull:
-              if (f.value == "false" && d.get(f.key) == null) {
-                i.add(index);
-              } else if (f.value == "true" && d.get(f.key) != null) {
-                i.add(index);
-              }
-              break;
-            default:
-              if (d.get(f.key) == f.value) {
-              } else {
-                i.add(index);
-              }
-              break;
+          if (f.isEqualTo != null) {
+            if (d.get(f.key) == f.isEqualTo) {
+            } else {
+              i.add(index);
+            }
           }
+          if (f.isNotEqualTo != null) {
+            if (d.get(f.key) != f.isNotEqualTo) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.isGreaterThanOrEqualTo != null) {
+            if (f.isGreaterThanOrEqualTo is DateTime) {
+              if ((DateTimeUtils.toDateTime(d.get(f.key))!)
+                  .isAfter(f.isGreaterThanOrEqualTo as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) >= f.isGreaterThanOrEqualTo) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.isGreaterThan != null) {
+            if (f.isGreaterThan is DateTime) {
+              if ((DateTimeUtils.toDateTime(d.get(f.key))!)
+                  .isAfter(f.isGreaterThan as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) > f.isGreaterThan) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.isLessThanOrEqualTo != null) {
+            if (f.isLessThanOrEqualTo is DateTime) {
+              if ((DateTimeUtils.toDateTime(d.get(f.key))!)
+                  .isBefore(f.isLessThanOrEqualTo as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) <= f.isLessThanOrEqualTo) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.isLessThan != null) {
+            if (f.isLessThan is DateTime) {
+              if ((DateTimeUtils.toDateTime(d.get(f.key))!)
+                  .isBefore(f.isLessThan as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) < f.isLessThan) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.whereIn != null) {
+            if ((f.whereIn as List).contains(d.get(f.key))) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.whereNotIn != null) {
+            if ((f.whereIn as List).contains(d.get(f.key))) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.arrayContains != null) {
+            if ((d.get(f.key) as List).contains(f.arrayContains)) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.arrayContainsAny != null) {
+            if ((d.get(f.key) as List).contains(f.arrayContains)) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.isNull != null) {
+            if ((d.get(f.key) != null) == (f.isNull as bool)) {
+            } else {
+              i.add(index);
+            }
+          }
+          // switch (f.operator) {
+          //   case DataFilterOperator.isEqualTo:
+          //     if (d.get(f.key) == f.value) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.isNotEqualTo:
+          //     if (d.get(f.key) != f.value) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.isGreaterThanOrEqualTo:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isAfter(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) >= f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.isGreaterThan:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isAfter(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) > f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.isLessThanOrEqualTo:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isBefore(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) <= f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.isLessThan:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isBefore(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) < f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.whereIn:
+          //     if ((f.value as List).contains(d.get(f.key))) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.whereNotIn:
+          //     if (!(f.value as List).contains(d.get(f.key))) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.arrayContains:
+          //     if (((d.get(f.key) ?? []) as List).contains(f.value)) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.arrayContainsAny:
+          //     if (((d.get(f.key) ?? []) as List).containAny(f.value as List)) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.isNull:
+          //     if (f.value == "false" && d.get(f.key) == null) {
+          //       i.add(index);
+          //     } else if (f.value == "true" && d.get(f.key) != null) {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   default:
+          //     if (d.get(f.key) == f.value) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          // }
         } catch (e) {
+          // i.add(index);
           // debugPrint("===========asasasas=============${d.get(f.key)}");
           // debugPrint("===========asasasas=============${d.get(f.key)}");
           // result.add(d);
@@ -195,8 +294,8 @@ extension ListDataItem on List<DataItem> {
         }
       }
     }
-    Set<String> ids = result.map((e) => e.id).toSet();
-    result.retainWhere((x) => ids.remove(x.id));
+    // Set<String> ids = result.map((e) => e.id).toSet();
+    // result.retainWhere((x) => ids.remove(x.id));
 
     return result;
   }
@@ -239,6 +338,61 @@ extension ListDataItem on List<DataItem> {
     Set<String> ids = result.map((e) => e.id).toSet();
     result.retainWhere((x) => ids.remove(x.id));
     return result;
+  }
+
+  /// Part Extension of [List<DataItem>] to sort data
+  List<List<DataItem>> groupData(List<dynamic> parameters) {
+    if (parameters.isNotEmpty) {
+      List<List<DataItem>> temp = [this];
+      for (int i = 0; i < parameters.length; i++) {
+        List separates = List.generate(length, (index) {
+          return this[index].get(parameters[i]);
+        }).toSet().toList();
+        separates.sort((a, b) {
+          if (a == null || b == null) {
+            if (a == null) {
+              a = 1;
+              b = 1;
+              return a.compareTo(0);
+            } else {
+              a = 0;
+              b = 0;
+              return a.compareTo(1);
+            }
+          } else if (a is DateTime || b is DateTime) {
+            a = DateTimeUtils.toDateTime(a);
+            b = DateTimeUtils.toDateTime(b);
+            if (a == null) {
+              a = 1;
+              b = 1;
+              return a.compareTo(0);
+            }
+            if (b == null) {
+              a = 0;
+              b = 0;
+              return a.compareTo(1);
+            }
+            return a.compareTo(b);
+          } else {
+            return a.compareTo(b);
+          }
+        });
+        List<List<DataItem>> store = [];
+        for (List<DataItem> dTemp in temp) {
+          for (dynamic separate in separates) {
+            store.add(dTemp.where((element) {
+              return element.get(parameters[i]) == separate;
+            }).toList());
+          }
+        }
+        temp = store;
+      }
+      return temp;
+    }
+    // Set<String> ids = map((e) => e.id).toSet();
+    // retainWhere((x) => ids.remove(x.id));
+
+    return [this];
   }
 
   // default page number is 1 and size is 30

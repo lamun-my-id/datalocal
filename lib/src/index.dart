@@ -57,7 +57,7 @@ class DataLocal {
 
   late String _name;
 
-  final Map<String, DataItem> _raw = {};
+  Map<String, DataItem> _raw = {};
   Map<String, DataItem> get raw => _raw;
 
   /// Log DataLocal used on debugMode
@@ -73,6 +73,7 @@ class DataLocal {
     try {
       await initializeDateFormatting();
     } catch (e) {
+      // print("Error initialize date time");
       //
     }
     try {
@@ -160,8 +161,7 @@ class DataLocal {
     await (prefs.remove(EncryptUtil().encript(_name)));
     for (String id in _container.ids) {
       await prefs.remove(EncryptUtil().encript(id));
-
-      _raw.remove(id);
+      // _raw.remove(id);
     }
     _isLoading = false;
     refresh();
@@ -267,25 +267,49 @@ class DataLocal {
   }
 
   Future<void> insertMany(List<Map<String, dynamic>> values) async {
-    for (Map<String, dynamic> value in values) {
-      _container.seq++;
-      DataItem newData = DataItem.create(
-        EncryptUtil()
-            .encript(DateTime.now().toString() + _container.seq.toString()),
-        value: value,
-        name: stateName,
-        parent: "",
-        seq: _container.seq,
-      );
-      try {
-        _raw[newData.id] = newData;
-        await newData.save({});
-        _container.ids.add(newData.path());
-        _container.lastDataCreatedAt = newData.createdAt;
-        _count = _container.ids.length;
-      } catch (e) {
-        //
+    // SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<dynamic> args = await DataCompute().isolate((_) async {
+      List<Map<String, dynamic>> values = _[0];
+      Map<String, DataItem> raw = _[1];
+      DataContainer container = _[2];
+      int count = _[3];
+      // SharedPreferences prefs = _[4];
+      // String _count = _[3];
+      // await Future.delayed(Duration(seconds: 2));
+
+      List<String> ids = [];
+      // print("Terdapat ${values.length} data yang diinputkan");
+      for (int index = 0; index < values.length; index++) {
+        // print("Data input ${index + 1} dari ${values.length}");
+        Map<String, dynamic> value = values[index];
+        container.seq++;
+        DataItem newData = DataItem.create(
+          EncryptUtil()
+              .encript(DateTime.now().toString() + container.seq.toString()),
+          value: value,
+          name: container.name,
+          parent: "",
+          seq: container.seq,
+        );
+        try {
+          ids.add(newData.id);
+          raw[newData.id] = newData;
+          // await newData.save({}, );
+          container.ids.add(newData.path());
+          container.lastDataCreatedAt = newData.createdAt;
+          count = container.ids.length;
+        } catch (e) {
+          //
+        }
       }
+      return [container, raw, count, ids];
+    }, args: [values, _raw, _container, _count]);
+    _container = args[0];
+    _raw = args[1];
+    _count = args[2];
+    List<String> ids = args[3];
+    for (String id in ids) {
+      await _raw[id]?.save({});
     }
     try {
       refresh();

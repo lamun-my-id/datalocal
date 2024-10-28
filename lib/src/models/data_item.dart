@@ -135,10 +135,17 @@ extension DataItemExtensionLocal on DataItem {
   Future<void> save(Map<String, dynamic> value, {DataLocal? datalocal}) async {
     _data = {..._data, ...value};
     _updatedAt = DateTime.now();
+    dynamic args = List<dynamic>.from(await DataCompute().isolate((_) async {
+      DataItem data = _[0];
+      return [
+        EncryptUtil().encript(data.path()),
+        EncryptUtil().encript(data.toJson()),
+        // 2,
+      ];
+    }, args: [this]));
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      prefs.setString(
-          EncryptUtil().encript(path()), EncryptUtil().encript(toJson()));
+      prefs.setString(args[0], args[1]);
       datalocal?.refresh();
     } catch (e) {
       //

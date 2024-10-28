@@ -8,6 +8,7 @@ import 'package:datalocal/src/models/data_key.dart';
 import 'package:datalocal/src/models/data_query.dart';
 import 'package:datalocal/src/models/data_row.dart';
 import 'package:datalocal/src/models/data_sort.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 extension DataLocalExtensionQuery on DataLocal {
   /// Find More specific query Data with this function
@@ -19,6 +20,7 @@ extension DataLocalExtensionQuery on DataLocal {
   }) async {
     DataQuery query = await find(filters: filters, sorts: sorts);
     List<DataItemRow> result = await DataCompute().isolate((_) async {
+      await initializeDateFormatting("ar_SA");
       DataQuery query = _[0];
       List<dynamic> selects = _[1];
       // List<DataFilter>? filters = _[2];
@@ -70,8 +72,14 @@ extension DataLocalExtensionQuery on DataLocal {
                 }
               }
             }
-            if (gQ is QueryAverage)
-              temp[gQ.as ?? 'averageOf${gQ.key}'] /= dg.length;
+            if (gQ is QueryAverage) {
+              if (dg.isEmpty) {
+                temp[gQ.as ?? 'averageOf${gQ.key}'] = 0;
+              } else {
+                temp[gQ.as ?? 'averageOf${gQ.key}'] =
+                    temp[gQ.as ?? 'averageOf${gQ.key}'] / dg.length;
+              }
+            }
             if (normQueries.isNotEmpty) {
               for (DataItem item in dg) {
                 for (dynamic nm in normQueries) {

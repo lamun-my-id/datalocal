@@ -20,7 +20,7 @@ extension DataItemExtension on DataItem {
         return DateTimeUtils.dateFormat(get(key.key), format: key.format);
       }
       if ((key is! DataKey)) {
-        throw "Please fill key with String or DataKey value";
+        throw "Please fill key with String or DataKey value not ${key.runtimeType}";
       }
       k = key;
     }

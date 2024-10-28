@@ -1,3 +1,5 @@
+// ignore_for_file: no_wildcard_variable_uses
+
 import 'dart:convert';
 
 import 'package:datalocal/datalocal.dart';

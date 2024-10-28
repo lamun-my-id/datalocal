@@ -1,5 +1,7 @@
 // part of "../models/data_item.dart";
 
+// ignore_for_file: no_wildcard_variable_uses
+
 import 'dart:convert';
 
 import 'package:datalocal/src/models/data_item.dart';

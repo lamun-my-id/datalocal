@@ -1,5 +1,9 @@
+// ignore_for_file: no_wildcard_variable_uses
+
+import 'package:collection/collection.dart';
 import 'package:datalocal/src/extensions/data_item.dart';
 import 'package:datalocal/src/extensions/list_data_item.dart';
+import 'package:datalocal/src/extensions/list_data_item_row.dart';
 import 'package:datalocal/src/index.dart';
 import 'package:datalocal/src/models/data_compute.dart';
 import 'package:datalocal/src/models/data_filter.dart';
@@ -17,8 +21,10 @@ extension DataLocalExtensionQuery on DataLocal {
     List<DataFilter>? filters,
     List<DataSort>? sorts,
     List<dynamic>? groups,
+    int? limit,
   }) async {
-    DataQuery query = await find(filters: filters, sorts: sorts);
+    DataQuery query =
+        await find(filters: filters, sorts: groups != null ? null : sorts);
     List<DataItemRow> result = await DataCompute().isolate((_) async {
       await initializeDateFormatting();
       DataQuery query = _[0];
@@ -33,19 +39,23 @@ extension DataLocalExtensionQuery on DataLocal {
             throw "Please fill key with String or DataKey value";
           }).toList() ??
           [];
+      dynamic groupQueries = [
+        ...selects.whereType<QueryGroup>(),
+        ...(groups ?? []).whereType<String>()
+      ];
+      List<dynamic> normQueries = selects
+          .where((_) => _ is String || _ is DataKey || _ is DataSelectDate)
+          .map((_) {
+        if (_ is String) {
+          return DataKey(_);
+        } else {
+          return _;
+        }
+      }).toList();
+
       List<List<DataItem>> dataGroup = query.data.groupData(k);
       List<DataItemRow> result = [];
       for (List<DataItem> dg in dataGroup) {
-        List<dynamic> groupQueries = selects.whereType<QueryGroup>().toList();
-        List<dynamic> normQueries = selects
-            .where((_) => _ is String || _ is DataKey || _ is DataSelectDate)
-            .map((_) {
-          if (_ is String) {
-            return DataKey(_);
-          } else {
-            return _;
-          }
-        }).toList();
         if (groupQueries.isNotEmpty) {
           Map<String, dynamic> temp = {};
           for (dynamic gQ in groupQueries) {
@@ -89,6 +99,9 @@ extension DataLocalExtensionQuery on DataLocal {
             }
           }
           result.add(DataItemRow._fromMap(temp));
+          if (sorts != null) {
+            result = result.sortData(sorts);
+          }
         } else {
           if (normQueries.isNotEmpty) {
             for (DataItem item in dg) {
@@ -103,6 +116,9 @@ extension DataLocalExtensionQuery on DataLocal {
       }
       return result;
     }, args: [query, selects, filters, sorts, groups]);
+    if (limit != null) {
+      result = result.slices(limit).toList().first;
+    }
     return result;
   }
 }

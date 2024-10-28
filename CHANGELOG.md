@@ -1,3 +1,6 @@
+## 1.0.33
+* Fix query execute, add sort and limit in execute query 
+
 ## 1.0.32
 * Add query execute, now you can query such as average, count, sum of the data items 
 

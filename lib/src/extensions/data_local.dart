@@ -20,7 +20,7 @@ extension DataLocalExtensionQuery on DataLocal {
   }) async {
     DataQuery query = await find(filters: filters, sorts: sorts);
     List<DataItemRow> result = await DataCompute().isolate((_) async {
-      await initializeDateFormatting("ar_SA");
+      await initializeDateFormatting();
       DataQuery query = _[0];
       List<dynamic> selects = _[1];
       // List<DataFilter>? filters = _[2];

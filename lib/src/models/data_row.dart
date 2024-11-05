@@ -1,7 +1,13 @@
-class DataSelectDate extends QueryGroup {
+class DataSelectDate {
+  final String key;
+  final String? as;
   final String format;
 
-  DataSelectDate(super.key, {super.as, this.format = "yyyyMMdd"});
+  DataSelectDate(this.key, {this.as, this.format = "yyyyMMdd"});
+}
+
+class QueryDistinct extends QueryGroup {
+  QueryDistinct(super.key, {super.as});
 }
 
 class QuerySum extends QueryGroup {

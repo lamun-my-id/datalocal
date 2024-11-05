@@ -1,4 +1,5 @@
 import 'package:datalocal/src/models/data_key.dart';
+import 'package:datalocal/src/models/data_row.dart';
 
 enum DataFilterOperator {
   isEqualTo,
@@ -45,7 +46,7 @@ class DataFilter {
     this.arrayContainsAny,
     this.isNull,
   }) {
-    assert((key is String || key is DataKey),
+    assert((key is String || key is DataKey || key is DataSelectDate),
         "Please fill key with String or DataKey value");
     if (key is String) this.key = DataKey(key);
     if (key is DataKey) this.key = key;

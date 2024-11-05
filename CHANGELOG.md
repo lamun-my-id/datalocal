@@ -1,3 +1,10 @@
+## 1.0.35
+* Fix query filter in execute
+
+
+## 1.0.34
+* Fix query execute, sort, and format data
+
 ## 1.0.33
 * Fix query execute, add sort and limit in execute query 
 

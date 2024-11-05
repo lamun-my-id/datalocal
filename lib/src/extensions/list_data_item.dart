@@ -1,12 +1,17 @@
-import 'package:datalocal/src/extensions/data_item.dart';
+// ignore_for_file: no_wildcard_variable_uses
+
+import 'package:collection/collection.dart';
+import 'package:datalocal/datalocal_extension.dart';
+import 'package:datalocal/datalocal_query_extension.dart';
 import 'package:datalocal/src/extensions/list.dart';
+import 'package:datalocal/src/extensions/list_data_item_row.dart';
 import 'package:datalocal/src/models/data_filter.dart';
-import 'package:datalocal/src/models/data_item.dart';
 import 'package:datalocal/src/models/data_key.dart';
 import 'package:datalocal/src/models/data_paginate.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
 import 'package:datalocal/utils/date_time.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 extension ListDataItem on List<DataItem> {
   /// Part Extension of [List<DataItem>] to sort data
@@ -400,5 +405,130 @@ extension ListDataItem on List<DataItem> {
     List<List<DataItem>> data = List<List<DataItem>>.from(chunks(value.size));
     if (value.page < 1) throw "Page ready at 1 to ${data.length}";
     return data[value.page - 1];
+  }
+
+  /// Find More specific query Data with this function
+  Future<List<DataItemRow>> execute(
+    List<dynamic> selects, {
+    List<DataFilter>? filters,
+    List<DataSort>? sorts,
+    List<dynamic>? groups,
+    int? limit,
+  }) async {
+    if (limit != null) assert(limit > 0, "Limit harus diatas 0");
+    List<DataItem> items = this;
+    if (filters != null) items = filterData(filters);
+    List<DataItemRow> result = await DataCompute().isolate((_) async {
+      await initializeDateFormatting();
+      List<DataItem> items = _[0];
+      List<dynamic> selects = _[1];
+      // List<DataFilter>? filters = _[2];
+      // List<DataSort>? sorts = _[3];
+      List<dynamic>? groups = _[4];
+      List<dynamic> k = groups?.map((key) {
+            if (key is String) return DataKey(key);
+            if (key is DataKey) return key;
+            if (key is DataSelectDate) return key;
+            if (key is QueryDistinct) return DataKey(key.key, as: key.as);
+            throw "Please fill key with String or DataKey value";
+          }).toList() ??
+          [];
+      List<dynamic> groupQueries = [
+        ...selects.whereType<QueryGroup>(),
+        ...(groups ?? []).whereType<String>(),
+        ...(groups ?? []).whereType<DataSelectDate>(),
+      ];
+      List<dynamic> normQueries = selects
+          .where((_) => _ is String || _ is DataKey || _ is DataSelectDate)
+          .map((_) {
+        if (_ is String) {
+          return DataKey(_);
+        } else {
+          return _;
+        }
+      }).toList();
+      // print("dataGroup.length");
+      List<List<DataItem>> dataGroup =
+          (groups ?? []).isEmpty && groupQueries.isNotEmpty
+              ? [items]
+              : items.groupData(k);
+      // print(dataGroup.length);
+      List<DataItemRow> result = [];
+      for (List<DataItem> dg in dataGroup) {
+        if (groupQueries.isNotEmpty) {
+          Map<String, dynamic> temp = {};
+          for (dynamic gQ in groupQueries) {
+            for (DataItem item in dg) {
+              if (gQ is QueryCount) {
+                try {
+                  temp[gQ.as ?? 'countOf${gQ.key}'] +=
+                      item.get(gQ.key) != null ? 1 : 0;
+                } catch (e) {
+                  temp[gQ.as ?? 'countOf${gQ.key}'] =
+                      item.get(gQ.key) != null ? 1 : 0;
+                }
+              } else if (gQ is QuerySum) {
+                try {
+                  temp[gQ.as ?? 'sumOf${gQ.key}'] += item.get(gQ.key) ?? 0;
+                } catch (e) {
+                  temp[gQ.as ?? 'sumOf${gQ.key}'] = item.get(gQ.key) ?? 0;
+                }
+              } else if (gQ is QueryAverage) {
+                try {
+                  temp[gQ.as ?? 'averageOf${gQ.key}'] += item.get(gQ.key) ?? 0;
+                } catch (e) {
+                  temp[gQ.as ?? 'averageOf${gQ.key}'] = item.get(gQ.key) ?? 0;
+                }
+              } else if (gQ is QueryDistinct) {
+                try {
+                  temp[gQ.as ?? 'distinctOf${gQ.key}'] = item.get(gQ.key);
+                } catch (e) {
+                  temp[gQ.as ?? 'distinctOf${gQ.key}'] = item.get(gQ.key) ?? 0;
+                }
+              } else if (gQ is DataSelectDate) {
+                temp[gQ.as ?? "dateFormatOf${gQ.key}"] = item.get(gQ);
+              } else {
+                temp[gQ] = item.get(gQ);
+              }
+            }
+            if (gQ is QueryAverage) {
+              if (dg.isEmpty) {
+                temp[gQ.as ?? 'averageOf${gQ.key}'] = 0;
+              } else {
+                temp[gQ.as ?? 'averageOf${gQ.key}'] =
+                    temp[gQ.as ?? 'averageOf${gQ.key}'] / dg.length;
+              }
+            }
+            if (normQueries.isNotEmpty) {
+              for (DataItem item in dg) {
+                for (dynamic nm in normQueries) {
+                  temp[nm.key] = item.get(nm);
+                }
+              }
+            }
+          }
+          result.add(DataItemRow.fromMap(temp));
+          if (sorts != null) {
+            result = result.sortData(sorts);
+          }
+        } else {
+          if (normQueries.isNotEmpty) {
+            // print(dg.length);
+            for (DataItem item in dg) {
+              Map<String, dynamic> temp = {};
+              for (dynamic nm in normQueries) {
+                temp[nm.as ?? nm.key] = item.get(nm);
+              }
+              result.add(DataItemRow.fromMap(temp));
+            }
+          }
+        }
+      }
+      return result;
+    }, args: [items, selects, filters, sorts, groups]);
+    if (limit != null && result.length > limit) {
+      result = result.slices(limit).toList().first;
+    }
+    return result;
   }
 }

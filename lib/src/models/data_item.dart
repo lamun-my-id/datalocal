@@ -122,7 +122,7 @@ class DataItem {
       {String? name, DataLocal? datalocal}) async {
     String id =
         EncryptUtil().encript("${path()}-${files.length}-${DateTime.now()}");
-    DataFile file = DataFile.create(id);
+    DataFile file = DataFile.create(id, name: name);
     files.add(file);
     await save({}, datalocal: datalocal);
     await file.saveBytes(value);

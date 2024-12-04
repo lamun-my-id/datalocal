@@ -1,4 +1,3 @@
-
 import 'package:datalocal/datalocal_query_extension.dart';
 import 'package:datalocal/src/extensions/data_row.dart';
 import 'package:datalocal/src/models/data_sort.dart';

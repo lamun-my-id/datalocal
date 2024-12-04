@@ -1,6 +1,11 @@
-## 1.0.35
+## 1.0.37
+* Fix saved datafile
+
+## 1.0.36
 * Fix query filter in execute
 
+## 1.0.35
+* Fix query filter in execute
 
 ## 1.0.34
 * Fix query execute, sort, and format data

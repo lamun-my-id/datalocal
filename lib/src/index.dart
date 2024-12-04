@@ -387,8 +387,6 @@ class DataLocal {
   }
 }
 
-
-
 /// Convert Json to List<DataItem>
 // dynamic _jsonToListDataItem(List<dynamic> args) {
 //   List<DataItem> result = [];

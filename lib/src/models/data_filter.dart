@@ -19,7 +19,7 @@ enum DataFilterOperator {
 /// Used separated with dot '.' to sort data inside map variable
 /// Use [operator] to filter more flexible
 class DataFilter {
-  late DataKey key;
+  late Object key;
   dynamic isEqualTo;
   dynamic isNotEqualTo;
   dynamic isGreaterThanOrEqualTo;
@@ -50,6 +50,7 @@ class DataFilter {
         "Please fill key with String or DataKey value");
     if (key is String) this.key = DataKey(key);
     if (key is DataKey) this.key = key;
+    if (key is DataSelectDate) this.key = key;
   }
 
   // String operatorInText() {

@@ -7,7 +7,8 @@ class DataCompute {
   Future<dynamic> isolate(Future Function(dynamic) function,
       {dynamic args}) async {
     if (kIsWeb) {
-      return await function(args);
+      return await compute(function, args);
+      // return await function(args);
     }
     final ReceivePort receivePort = ReceivePort();
     RootIsolateToken rootToken = RootIsolateToken.instance!;

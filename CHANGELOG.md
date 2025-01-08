@@ -1,3 +1,6 @@
+## 1.0.38
+* Improvement load data
+
 ## 1.0.37
 * Fix saved datafile
 

@@ -136,16 +136,22 @@ class DataLocal {
   Future<void> _loadState() async {
     _isLoading = true;
     refresh();
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
 
     for (String id in _container.ids) {
-      String? ref = prefs.getString(EncryptUtil().encript(id));
-      if (ref == null) {
-        // Tidak ada data yang disimpan
-      } else {
-        DataItem d = DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref)));
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      DataItem? d = await DataCompute().isolate((args) async {
+        String? ref = prefs.getString(EncryptUtil().encript(id));
+        if (ref == null) {
+          // Tidak ada data yang disimpan
+          return null;
+        } else {
+          DataItem d = DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref)));
+          // _data.add(DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref))));
+          return d;
+        }
+      });
+      if (d != null) {
         _raw[d.id] = d;
-        // _data.add(DataItem.fromMap(jsonDecode(EncryptUtil().decript(ref))));
       }
     }
 

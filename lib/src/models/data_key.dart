@@ -1,3 +1,5 @@
+/// get data raw via dataitem with datakey
+/// dataitem.get(DataKey('field')) with some other value param
 class DataKey {
   String key;
   String? as;

@@ -1,20 +1,6 @@
 import 'package:datalocal/src/models/data_key.dart';
 import 'package:datalocal/src/models/data_row.dart';
 
-enum DataFilterOperator {
-  isEqualTo,
-  isNotEqualTo,
-  isGreaterThanOrEqualTo,
-  isGreaterThan,
-  isLessThanOrEqualTo,
-  isLessThan,
-  whereIn,
-  whereNotIn,
-  arrayContains,
-  arrayContainsAny,
-  isNull
-}
-
 /// Used to filter [DataLocal] data [key] is the index of map
 /// Used separated with dot '.' to sort data inside map variable
 /// Use [operator] to filter more flexible

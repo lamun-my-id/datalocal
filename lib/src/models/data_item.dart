@@ -12,6 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 // part '../extensions/data_item.dart';
 
+/// DataItem your saved data in datalocal
+/// use [dataitem.get(fieldname)] to get field value
 class DataItem {
   late String _id;
   String get id => _id;
@@ -55,6 +57,7 @@ class DataItem {
     return result;
   }
 
+  // Generate new DataItem from map object
   factory DataItem.fromMap(Map<String, dynamic> value) {
     Map<String, dynamic> data = Map<String, dynamic>.from(value['data']);
     try {
@@ -118,6 +121,7 @@ class DataItem {
   //   data['updatedAt'] = DateTime.now();
   // }
 
+  // save file locally use bytes data
   Future<void> saveFile(Uint8List value,
       {String? name, DataLocal? datalocal}) async {
     String id =
@@ -130,10 +134,12 @@ class DataItem {
 }
 
 extension DataItemExtensionLocal on DataItem {
+  // get path for your saved data
   String path() {
     return "$name-$parent-$id";
   }
 
+  // update data
   Future<void> save(Map<String, dynamic> value, {DataLocal? datalocal}) async {
     _data = {..._data, ...value};
     _updatedAt = DateTime.now();
@@ -154,6 +160,7 @@ extension DataItemExtensionLocal on DataItem {
     }
   }
 
+  // convert dataitem to map object
   Map<String, dynamic> toMap() {
     return {
       "id": _id,
@@ -168,6 +175,7 @@ extension DataItemExtensionLocal on DataItem {
   }
 }
 
+// datafile model to save in dataitem
 class DataFile {
   late String _id;
   String get id => _id;
@@ -202,6 +210,7 @@ class DataFile {
     return result;
   }
 
+  // save data file to dataitem
   save() async {
     return await DataCompute().isolate(
       (_) async {
@@ -212,6 +221,7 @@ class DataFile {
     );
   }
 
+  // get bytes data
   Future<Uint8List> getBytes() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     return base64Decode(
@@ -224,6 +234,7 @@ class DataFile {
     // );
   }
 
+  // save to update bytes data
   saveBytes(Uint8List value) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString(EncryptUtil().encript(pathFile()), base64Encode(value));
@@ -235,6 +246,7 @@ class DataFile {
     // );
   }
 
+  // creating datafile from map object
   factory DataFile.fromMap(Map<String, dynamic> value) {
     try {
       value["createdAt"] = DateTimeUtils.toDateTime(value['createdAt']);
@@ -257,14 +269,17 @@ class DataFile {
 }
 
 extension DataFileExtensionLocal on DataFile {
+  // get saved file path
   String pathFile() {
     return "$parent-$id-file";
   }
 
+  // get saved file path
   String path() {
     return "$parent-$id-file";
   }
 
+  // convert datafile data to map object
   Map<String, dynamic> toMap() {
     return {
       "id": _id,

@@ -4,6 +4,7 @@ import 'dart:convert';
 
 import 'package:datalocal/utils/date_time.dart';
 
+/// Container to save data path for your datalocal
 class DataContainer {
   String name;
   String? path;
@@ -15,6 +16,8 @@ class DataContainer {
   List<String> ids;
   Map<String, dynamic> params;
 
+  /// Container to save data path for your datalocal
+  /// [name] is unique, like key, or will broken with other data.
   DataContainer({
     required this.name,
     this.path,
@@ -27,6 +30,7 @@ class DataContainer {
     Map<String, dynamic>? param,
   }) : params = param ?? {};
 
+  /// Creating data container from map object
   factory DataContainer.fromMap(Map<String, dynamic> value) {
     return DataContainer(
       name: value['name'],
@@ -41,6 +45,7 @@ class DataContainer {
     );
   }
 
+  /// Creating data container to json
   String toJson() {
     return jsonEncode(
       toMap(),
@@ -54,6 +59,7 @@ class DataContainer {
     );
   }
 
+  /// Creating data container to map object
   Map<String, dynamic> toMap() {
     return {
       "name": name,

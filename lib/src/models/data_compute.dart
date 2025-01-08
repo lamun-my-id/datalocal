@@ -3,7 +3,10 @@ import 'dart:isolate';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+// Take your time to use function with isolate function, bye bye laggy
 class DataCompute {
+  // [function] insert your function here with args
+  // [args] insert parameter to function
   Future<dynamic> isolate(Future Function(dynamic) function,
       {dynamic args}) async {
     if (kIsWeb) {
@@ -24,6 +27,7 @@ class DataCompute {
     return await receivePort.first;
   }
 
+  // entry isolates for multi threading
   void _isolateEntry(_IsolateData isolateData) async {
     BackgroundIsolateBinaryMessenger.ensureInitialized(isolateData.token);
     final dynamic answer = await isolateData.function(isolateData.args);
@@ -31,12 +35,14 @@ class DataCompute {
   }
 }
 
+// Isolate model for compute function needed
 class _IsolateData {
   final RootIsolateToken token;
   final Function(dynamic) function;
   final SendPort answerPort;
   final dynamic args;
 
+  // Isolate model for compute function needed
   _IsolateData({
     required this.token,
     required this.function,

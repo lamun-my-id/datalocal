@@ -11,12 +11,18 @@ import 'package:flutter/foundation.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Plugin package to store data locally with storage techniques using the "shared preferences" plugin,
+// this plugin already supports Android, iOS, Web, Windows, MacOS, and Linux.
+// Data storage and data retrieval use isolates, so it can maximize the performance of flutter.
 class DataLocal {
   final String _stateName;
   String get stateName => _stateName;
   Function()? onRefresh;
   final bool _debugMode;
 
+  // [stateName] is like key collection to save datas, or like something like table name in SQL.
+  // [onRefresh] used when new data available and some change in data
+  // [debugMode] developer used to see log data
   DataLocal(
     String stateName, {
     this.onRefresh,

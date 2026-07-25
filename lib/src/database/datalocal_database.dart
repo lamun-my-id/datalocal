@@ -1,5 +1,9 @@
+// ignore_for_file: prefer_initializing_formals
+
 import 'package:datalocal/src/codec/datalocal_codec.dart';
+import 'package:datalocal/src/consistency/datalocal_commit_coordinator.dart';
 import 'package:datalocal/src/database/datalocal_collection.dart';
+import 'package:datalocal/src/database/datalocal_write_batch.dart';
 import 'package:datalocal/src/document/datalocal_clock.dart';
 import 'package:datalocal/src/document/document_id.dart';
 import 'package:datalocal/src/encryption/datalocal_encryption.dart';
@@ -16,7 +20,9 @@ final class DataLocalDatabase {
     required DataLocalEncryptionProvider encryption,
     required this._clock,
     required this._idGenerator,
-  }) : _serializer = DataLocalRecordSerializer(
+    required DataLocalCommitCoordinator coordinator,
+  }) : _coordinator = coordinator,
+       _serializer = DataLocalRecordSerializer(
          databaseName: name,
          encryption: encryption,
        );
@@ -26,6 +32,7 @@ final class DataLocalDatabase {
   final DataLocalClock _clock;
   final DataLocalDocumentIdGenerator _idGenerator;
   final DataLocalRecordSerializer _serializer;
+  final DataLocalCommitCoordinator _coordinator;
   bool _isClosed = false;
 
   bool get isClosed => _isClosed;
@@ -38,15 +45,22 @@ final class DataLocalDatabase {
         const DataLocalNoEncryptionProvider(),
     DataLocalClock clock = const DataLocalSystemClock(),
     DataLocalDocumentIdGenerator? idGenerator,
+    DataLocalFailureInjector? failureInjector,
   }) async {
     final context = DataLocalStorageContext(databaseName: name);
     await storage.open(context);
+    final coordinator = DataLocalCommitCoordinator(
+      storage: storage,
+      failureInjector: failureInjector,
+    );
+    await coordinator.recover();
     return DataLocalDatabase._(
       name: context.databaseName,
       storage: storage,
       encryption: encryption,
       clock: clock,
       idGenerator: idGenerator ?? DataLocalSecureDocumentIdGenerator(),
+      coordinator: coordinator,
     );
   }
 
@@ -71,8 +85,19 @@ final class DataLocalDatabase {
       serializer: _serializer,
       clock: _clock,
       idGenerator: _idGenerator,
+      coordinator: _coordinator,
       requireDatabaseOpen: _requireOpen,
     );
+  }
+
+  Future<void> writeBatch(void Function(DataLocalWriteBatch batch) build) {
+    _requireOpen();
+    final batch = DataLocalWriteBatch.internal();
+    build(batch);
+    return _coordinator.synchronized(() async {
+      _requireOpen();
+      await _coordinator.commit(await batch.sealAndPrepare());
+    });
   }
 
   Future<void> close() async {

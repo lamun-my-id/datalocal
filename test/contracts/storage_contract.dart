@@ -120,6 +120,20 @@ void storageContract(String name, StorageFactory createStorage) {
         throwsA(isA<DataLocalClosedException>()),
       );
     });
+
+    test('persists defensive journal copies and clears them', () async {
+      final source = Uint8List.fromList(<int>[1, 2, 3]);
+      await storage.writeJournal(source);
+      source[0] = 99;
+
+      final first = await storage.readJournal();
+      expect(first, <int>[1, 2, 3]);
+      first![1] = 99;
+      expect(await storage.readJournal(), <int>[1, 2, 3]);
+
+      await storage.clearJournal();
+      expect(await storage.readJournal(), isNull);
+    });
   });
 }
 

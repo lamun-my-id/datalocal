@@ -1,6 +1,7 @@
 // ignore_for_file: prefer_initializing_formals
 
 import 'package:datalocal/src/codec/datalocal_codec.dart';
+import 'package:datalocal/src/consistency/datalocal_commit_coordinator.dart';
 import 'package:datalocal/src/document/datalocal_clock.dart';
 import 'package:datalocal/src/document/datalocal_document.dart';
 import 'package:datalocal/src/document/document_id.dart';
@@ -17,12 +18,14 @@ final class DataLocalCollection<T> {
     required DataLocalRecordSerializer serializer,
     required DataLocalClock clock,
     required DataLocalDocumentIdGenerator idGenerator,
+    required DataLocalCommitCoordinator coordinator,
     required void Function() requireDatabaseOpen,
   }) : _codec = codec,
        _storage = storage,
        _serializer = serializer,
        _clock = clock,
        _idGenerator = idGenerator,
+       _coordinator = coordinator,
        _requireDatabaseOpen = requireDatabaseOpen;
 
   final String name;
@@ -31,28 +34,34 @@ final class DataLocalCollection<T> {
   final DataLocalRecordSerializer _serializer;
   final DataLocalClock _clock;
   final DataLocalDocumentIdGenerator _idGenerator;
+  final DataLocalCommitCoordinator _coordinator;
   final void Function() _requireDatabaseOpen;
 
   Future<DataLocalDocument<T>> insert(T value, {String? id}) async {
     _requireDatabaseOpen();
-    final document = DataLocalDocument<T>.create(
-      data: value,
-      codec: _codec,
-      id: id,
-      idGenerator: _idGenerator,
-      clock: _clock,
-    );
-    if (await _storage.read(name, document.id) != null) {
-      throw DataLocalConflictException(
-        'A document with this ID already exists.',
-        context: <String, Object?>{
-          'collection': name,
-          'documentId': document.id,
-        },
+    return _coordinator.synchronized(() async {
+      final document = DataLocalDocument<T>.create(
+        data: value,
+        codec: _codec,
+        id: id,
+        idGenerator: _idGenerator,
+        clock: _clock,
       );
-    }
-    await _persist(document);
-    return document;
+      if (await _storage.read(name, document.id) != null) {
+        throw DataLocalConflictException(
+          'A document with this ID already exists.',
+          context: <String, Object?>{
+            'collection': name,
+            'documentId': document.id,
+          },
+        );
+      }
+      final record = await encodeForCommit(document);
+      await _coordinator.commit(<DataLocalStorageMutation>[
+        DataLocalStorageMutation.write(record),
+      ]);
+      return document;
+    });
   }
 
   Future<DataLocalDocument<T>?> get(String id) async {
@@ -78,16 +87,21 @@ final class DataLocalCollection<T> {
     int? expectedRevision,
   }) async {
     _requireDatabaseOpen();
-    final current = await require(id);
-    _checkRevision(current, expectedRevision);
-    final encoded = _codec.encode(value);
-    final decoded = _codec.decode(encoded);
-    final updated = DataLocalDocument<T>(
-      metadata: current.metadata.nextRevision(_clock.now()),
-      data: decoded,
-    );
-    await _persist(updated);
-    return updated;
+    return _coordinator.synchronized(() async {
+      final current = await require(id);
+      _checkRevision(current, expectedRevision);
+      final encoded = _codec.encode(value);
+      final decoded = _codec.decode(encoded);
+      final updated = DataLocalDocument<T>(
+        metadata: current.metadata.nextRevision(_clock.now()),
+        data: decoded,
+      );
+      final record = await encodeForCommit(updated);
+      await _coordinator.commit(<DataLocalStorageMutation>[
+        DataLocalStorageMutation.write(record),
+      ]);
+      return updated;
+    });
   }
 
   Future<DataLocalDocument<T>> patch(
@@ -95,29 +109,53 @@ final class DataLocalCollection<T> {
     Map<String, Object?> values, {
     int? expectedRevision,
   }) async {
-    final current = await require(id);
-    _checkRevision(current, expectedRevision);
-    final currentMap = _codec.encode(current.data);
-    final merged = <String, Object?>{...currentMap, ...values};
-    return replace(
-      id,
-      _codec.decode(merged),
-      expectedRevision: current.revision,
-    );
+    _requireDatabaseOpen();
+    return _coordinator.synchronized(() async {
+      final current = await require(id);
+      _checkRevision(current, expectedRevision);
+      final currentMap = _codec.encode(current.data);
+      final merged = <String, Object?>{...currentMap, ...values};
+      final updated = DataLocalDocument<T>(
+        metadata: current.metadata.nextRevision(_clock.now()),
+        data: _codec.decode(merged),
+      );
+      final record = await encodeForCommit(updated);
+      await _coordinator.commit(<DataLocalStorageMutation>[
+        DataLocalStorageMutation.write(record),
+      ]);
+      return updated;
+    });
   }
 
   Future<bool> delete(String id, {int? expectedRevision}) async {
     _requireDatabaseOpen();
-    if (expectedRevision != null) {
-      final current = await require(id);
-      _checkRevision(current, expectedRevision);
-    }
-    return _storage.delete(name, id);
+    return _coordinator.synchronized(() async {
+      if (expectedRevision != null) {
+        final current = await require(id);
+        _checkRevision(current, expectedRevision);
+      }
+      if (await _storage.read(name, id) == null) {
+        return false;
+      }
+      await _coordinator.commit(<DataLocalStorageMutation>[
+        DataLocalStorageMutation.delete(collection: name, id: id),
+      ]);
+      return true;
+    });
   }
 
   Future<void> clear() async {
     _requireDatabaseOpen();
-    await _storage.clearCollection(name);
+    await _coordinator.synchronized(() async {
+      final records = await _storage.readCollection(name);
+      await _coordinator.commit(<DataLocalStorageMutation>[
+        for (final record in records)
+          DataLocalStorageMutation.delete(
+            collection: record.collection,
+            id: record.id,
+          ),
+      ]);
+    });
   }
 
   DataLocalQuery<T> query() => DataLocalQuery<T>.root(this);
@@ -134,14 +172,61 @@ final class DataLocalCollection<T> {
 
   Map<String, Object?> encodeForQuery(T value) => _codec.encode(value);
 
-  Future<void> _persist(DataLocalDocument<T> document) async {
+  Future<DataLocalStorageMutation> prepareInsertForBatch(
+    T value, {
+    String? id,
+  }) async {
+    final document = DataLocalDocument<T>.create(
+      data: value,
+      codec: _codec,
+      id: id,
+      idGenerator: _idGenerator,
+      clock: _clock,
+    );
+    if (await _storage.read(name, document.id) != null) {
+      throw DataLocalConflictException(
+        'A document with this ID already exists.',
+        context: <String, Object?>{
+          'collection': name,
+          'documentId': document.id,
+        },
+      );
+    }
+    return DataLocalStorageMutation.write(await encodeForCommit(document));
+  }
+
+  Future<DataLocalStorageMutation> prepareReplaceForBatch(
+    String id,
+    T value, {
+    int? expectedRevision,
+  }) async {
+    final current = await require(id);
+    _checkRevision(current, expectedRevision);
+    final updated = DataLocalDocument<T>(
+      metadata: current.metadata.nextRevision(_clock.now()),
+      data: _codec.decode(_codec.encode(value)),
+    );
+    return DataLocalStorageMutation.write(await encodeForCommit(updated));
+  }
+
+  Future<DataLocalStorageMutation> prepareDeleteForBatch(
+    String id, {
+    int? expectedRevision,
+  }) async {
+    final current = await require(id);
+    _checkRevision(current, expectedRevision);
+    return DataLocalStorageMutation.delete(collection: name, id: id);
+  }
+
+  Future<DataLocalStoredRecord> encodeForCommit(
+    DataLocalDocument<T> document,
+  ) async {
     final encoded = _codec.encode(document.data);
-    final record = await _serializer.encode(
+    return _serializer.encode(
       collection: name,
       document: document,
       data: encoded,
     );
-    await _storage.write(record);
   }
 
   Future<DataLocalDocument<T>> _decode(DataLocalStoredRecord record) async {

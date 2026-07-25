@@ -114,5 +114,14 @@ abstract interface class DataLocalStorage {
 
   Future<void> clearCollection(String collection);
 
+  /// Returns the database-level recovery journal, when a commit was interrupted.
+  Future<Uint8List?> readJournal();
+
+  /// Atomically replaces the database-level recovery journal blob.
+  Future<void> writeJournal(Uint8List payload);
+
+  /// Removes the recovery journal after a commit is fully durable.
+  Future<void> clearJournal();
+
   Future<void> close();
 }

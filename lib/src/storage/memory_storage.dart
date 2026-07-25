@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:datalocal/src/exceptions/datalocal_exception.dart';
 import 'package:datalocal/src/storage/datalocal_storage.dart';
@@ -15,6 +16,7 @@ final class DataLocalMemoryStorage implements DataLocalStorage {
 
   bool _isOpen = false;
   String? _databaseName;
+  List<int>? _journal;
 
   @override
   DataLocalStorageCapabilities get capabilities =>
@@ -95,6 +97,28 @@ final class DataLocalMemoryStorage implements DataLocalStorage {
     _requireOpen();
     await _delay();
     _records.remove(collection);
+  }
+
+  @override
+  Future<Uint8List?> readJournal() async {
+    _requireOpen();
+    await _delay();
+    final journal = _journal;
+    return journal == null ? null : Uint8List.fromList(journal);
+  }
+
+  @override
+  Future<void> writeJournal(Uint8List payload) async {
+    _requireOpen();
+    await _delay();
+    _journal = List<int>.from(payload);
+  }
+
+  @override
+  Future<void> clearJournal() async {
+    _requireOpen();
+    await _delay();
+    _journal = null;
   }
 
   @override

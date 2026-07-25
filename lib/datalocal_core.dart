@@ -13,6 +13,8 @@ export 'src/document/datalocal_metadata.dart';
 export 'src/document/document_id.dart';
 export 'src/database/datalocal_collection.dart';
 export 'src/database/datalocal_database.dart';
+export 'src/database/datalocal_write_batch.dart';
+export 'src/consistency/datalocal_commit_coordinator.dart';
 export 'src/exceptions/datalocal_exception.dart';
 export 'src/encryption/datalocal_encryption.dart';
 export 'src/encryption/datalocal_key_provider.dart';

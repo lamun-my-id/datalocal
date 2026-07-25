@@ -1,0 +1,93 @@
+name: DataLocal v2
+
+on:
+  push:
+    branches: [v2]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: dart format --output=none --set-exit-if-changed lib test
+      - run: flutter analyze
+      - run: flutter test
+      - run: dart pub publish --dry-run
+
+  macos-e2e:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test integration_test/datalocal_e2e_test.dart -d macos
+        working-directory: example
+      - run: tool/run_e2e_checkpoint.sh macos
+
+  android-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          script: |
+            cd example
+            flutter test integration_test/datalocal_e2e_test.dart -d emulator-5554 --dart-define=DATALOCAL_E2E_DEVICE_KEYS=true
+            cd ..
+            tool/run_e2e_checkpoint.sh emulator-5554 true
+
+  ios-e2e:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: open -a Simulator
+      - run: xcrun simctl boot "iPhone 16 Pro" || true
+      - run: flutter test integration_test/datalocal_e2e_test.dart -d "iPhone 16 Pro" --dart-define=DATALOCAL_E2E_DEVICE_KEYS=true
+        working-directory: example
+
+  web-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: browser-actions/setup-chrome@v2
+      - uses: nanasess/setup-chromedriver@v2
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter config --enable-web
+      - run: |
+          chromedriver --port=4444 &
+          flutter drive --driver=test_driver/integration_test.dart --target=integration_test/datalocal_e2e_test.dart -d chrome
+        working-directory: example
+
+  desktop-contracts:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter test

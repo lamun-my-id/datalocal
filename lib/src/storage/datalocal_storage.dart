@@ -125,3 +125,8 @@ abstract interface class DataLocalStorage {
 
   Future<void> close();
 }
+
+/// Optional post-recovery integrity hook for manifest-based adapters.
+abstract interface class DataLocalIntegrityVerifyingStorage {
+  Future<void> verifyIntegrity();
+}

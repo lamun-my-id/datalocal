@@ -54,6 +54,10 @@ final class DataLocalDatabase {
       failureInjector: failureInjector,
     );
     await coordinator.recover();
+    if (storage
+        case final DataLocalIntegrityVerifyingStorage verifyingStorage) {
+      await verifyingStorage.verifyIntegrity();
+    }
     return DataLocalDatabase._(
       name: context.databaseName,
       storage: storage,

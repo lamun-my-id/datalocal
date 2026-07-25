@@ -9,3 +9,12 @@ export 'src/models/data_filter.dart';
 export 'src/models/data_sort.dart';
 export 'src/models/data_search.dart';
 export 'src/models/data_paginate.dart';
+
+// DataLocal 2.0 core domain.
+export 'src/codec/datalocal_codec.dart';
+export 'src/document/datalocal_clock.dart';
+export 'src/document/datalocal_document.dart';
+export 'src/document/datalocal_document_validator.dart';
+export 'src/document/datalocal_metadata.dart';
+export 'src/document/document_id.dart';
+export 'src/exceptions/datalocal_exception.dart';

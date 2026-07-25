@@ -64,6 +64,34 @@ final class DataLocalCollection<T> {
     });
   }
 
+  /// Imports an externally decoded document while preserving its metadata.
+  ///
+  /// Intended for verified migration tools. Existing IDs are never overwritten.
+  Future<DataLocalDocument<T>> importDocument(
+    DataLocalDocument<T> document,
+  ) async {
+    _requireDatabaseOpen();
+    return _coordinator.synchronized(() async {
+      if (await _storage.read(name, document.id) != null) {
+        throw DataLocalConflictException(
+          'A document with this ID already exists.',
+          context: <String, Object?>{
+            'collection': name,
+            'documentId': document.id,
+          },
+        );
+      }
+      final normalized = DataLocalDocument<T>(
+        metadata: document.metadata,
+        data: _codec.decode(_codec.encode(document.data)),
+      );
+      await _coordinator.commit(<DataLocalStorageMutation>[
+        DataLocalStorageMutation.write(await encodeForCommit(normalized)),
+      ]);
+      return normalized;
+    });
+  }
+
   Future<DataLocalDocument<T>?> get(String id) async {
     _requireDatabaseOpen();
     final record = await _storage.read(name, id);

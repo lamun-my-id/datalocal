@@ -31,6 +31,7 @@ export 'src/encryption/secure_storage_key_provider.dart';
 export 'src/storage/datalocal_storage.dart';
 export 'src/storage/memory_storage.dart';
 export 'src/storage/shared_preferences_async_storage.dart';
+export 'src/migration/legacy_v1_migration.dart';
 export 'src/query/datalocal_field_path.dart';
 export 'src/query/datalocal_query.dart';
 export 'src/query/datalocal_query_cursor.dart';

@@ -7,6 +7,7 @@ import 'package:datalocal/src/document/datalocal_document.dart';
 import 'package:datalocal/src/document/document_id.dart';
 import 'package:datalocal/src/exceptions/datalocal_exception.dart';
 import 'package:datalocal/src/query/datalocal_query.dart';
+import 'package:datalocal/src/reactive/datalocal_change.dart';
 import 'package:datalocal/src/serialization/datalocal_record_serializer.dart';
 import 'package:datalocal/src/storage/datalocal_storage.dart';
 
@@ -19,6 +20,7 @@ final class DataLocalCollection<T> {
     required DataLocalClock clock,
     required DataLocalDocumentIdGenerator idGenerator,
     required DataLocalCommitCoordinator coordinator,
+    required DataLocalChangeHub changeHub,
     required void Function() requireDatabaseOpen,
   }) : _codec = codec,
        _storage = storage,
@@ -26,6 +28,7 @@ final class DataLocalCollection<T> {
        _clock = clock,
        _idGenerator = idGenerator,
        _coordinator = coordinator,
+       _changeHub = changeHub,
        _requireDatabaseOpen = requireDatabaseOpen;
 
   final String name;
@@ -35,6 +38,7 @@ final class DataLocalCollection<T> {
   final DataLocalClock _clock;
   final DataLocalDocumentIdGenerator _idGenerator;
   final DataLocalCommitCoordinator _coordinator;
+  final DataLocalChangeHub _changeHub;
   final void Function() _requireDatabaseOpen;
 
   Future<DataLocalDocument<T>> insert(T value, {String? id}) async {
@@ -60,6 +64,7 @@ final class DataLocalCollection<T> {
       await _coordinator.commit(<DataLocalStorageMutation>[
         DataLocalStorageMutation.write(record),
       ]);
+      _emit(document.id, DataLocalMutationType.insert);
       return document;
     });
   }
@@ -88,6 +93,7 @@ final class DataLocalCollection<T> {
       await _coordinator.commit(<DataLocalStorageMutation>[
         DataLocalStorageMutation.write(await encodeForCommit(normalized)),
       ]);
+      _emit(normalized.id, DataLocalMutationType.insert);
       return normalized;
     });
   }
@@ -128,6 +134,7 @@ final class DataLocalCollection<T> {
       await _coordinator.commit(<DataLocalStorageMutation>[
         DataLocalStorageMutation.write(record),
       ]);
+      _emit(updated.id, DataLocalMutationType.update);
       return updated;
     });
   }
@@ -151,6 +158,7 @@ final class DataLocalCollection<T> {
       await _coordinator.commit(<DataLocalStorageMutation>[
         DataLocalStorageMutation.write(record),
       ]);
+      _emit(updated.id, DataLocalMutationType.update);
       return updated;
     });
   }
@@ -168,6 +176,7 @@ final class DataLocalCollection<T> {
       await _coordinator.commit(<DataLocalStorageMutation>[
         DataLocalStorageMutation.delete(collection: name, id: id),
       ]);
+      _emit(id, DataLocalMutationType.delete);
       return true;
     });
   }
@@ -183,10 +192,20 @@ final class DataLocalCollection<T> {
             id: record.id,
           ),
       ]);
+      _changeHub.emit(<DataLocalDocumentChange>[
+        for (final record in records)
+          DataLocalDocumentChange(
+            collection: name,
+            documentId: record.id,
+            type: DataLocalMutationType.delete,
+          ),
+      ]);
     });
   }
 
   DataLocalQuery<T> query() => DataLocalQuery<T>.root(this);
+
+  Stream<DataLocalCommitEvent> get changes => _changeHub.forCollection(name);
 
   Future<List<DataLocalDocument<T>>> readAllForQuery() async {
     _requireDatabaseOpen();
@@ -277,5 +296,11 @@ final class DataLocalCollection<T> {
         },
       );
     }
+  }
+
+  void _emit(String id, DataLocalMutationType type) {
+    _changeHub.emit(<DataLocalDocumentChange>[
+      DataLocalDocumentChange(collection: name, documentId: id, type: type),
+    ]);
   }
 }

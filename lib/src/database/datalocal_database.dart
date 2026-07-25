@@ -9,6 +9,7 @@ import 'package:datalocal/src/document/document_id.dart';
 import 'package:datalocal/src/encryption/datalocal_encryption.dart';
 import 'package:datalocal/src/encryption/no_encryption_provider.dart';
 import 'package:datalocal/src/exceptions/datalocal_exception.dart';
+import 'package:datalocal/src/reactive/datalocal_change.dart';
 import 'package:datalocal/src/serialization/datalocal_record_serializer.dart';
 import 'package:datalocal/src/storage/datalocal_storage.dart';
 
@@ -22,6 +23,7 @@ final class DataLocalDatabase {
     required this._idGenerator,
     required DataLocalCommitCoordinator coordinator,
   }) : _coordinator = coordinator,
+       _changeHub = DataLocalChangeHub(),
        _serializer = DataLocalRecordSerializer(
          databaseName: name,
          encryption: encryption,
@@ -33,9 +35,13 @@ final class DataLocalDatabase {
   final DataLocalDocumentIdGenerator _idGenerator;
   final DataLocalRecordSerializer _serializer;
   final DataLocalCommitCoordinator _coordinator;
+  final DataLocalChangeHub _changeHub;
   bool _isClosed = false;
+  bool _isClosing = false;
+  Future<void>? _closeFuture;
 
   bool get isClosed => _isClosed;
+  Stream<DataLocalCommitEvent> get changes => _changeHub.events;
   DataLocalStorageCapabilities get storageCapabilities => _storage.capabilities;
 
   static Future<DataLocalDatabase> open({
@@ -90,6 +96,7 @@ final class DataLocalDatabase {
       clock: _clock,
       idGenerator: _idGenerator,
       coordinator: _coordinator,
+      changeHub: _changeHub,
       requireDatabaseOpen: _requireOpen,
     );
   }
@@ -100,20 +107,38 @@ final class DataLocalDatabase {
     build(batch);
     return _coordinator.synchronized(() async {
       _requireOpen();
-      await _coordinator.commit(await batch.sealAndPrepare());
+      final prepared = await batch.sealAndPrepare();
+      await _coordinator.commit(
+        prepared.map((item) => item.mutation).toList(growable: false),
+      );
+      _changeHub.emit(
+        prepared.map((item) => item.change).toList(growable: false),
+      );
     });
   }
 
-  Future<void> close() async {
+  Future<void> close() {
     if (_isClosed) {
-      return;
+      return Future<void>.value();
     }
+    final current = _closeFuture;
+    if (current != null) {
+      return current;
+    }
+    _isClosing = true;
+    return _closeFuture = _performClose();
+  }
+
+  Future<void> _performClose() async {
+    await _coordinator.drain();
     await _storage.close();
+    await _changeHub.close();
     _isClosed = true;
+    _isClosing = false;
   }
 
   void _requireOpen() {
-    if (_isClosed) {
+    if (_isClosed || _isClosing) {
       throw const DataLocalClosedException('Database is closed.');
     }
   }

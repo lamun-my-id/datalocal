@@ -36,3 +36,4 @@ export 'src/query/datalocal_field_path.dart';
 export 'src/query/datalocal_query.dart';
 export 'src/query/datalocal_query_cursor.dart';
 export 'src/query/datalocal_query_snapshot.dart';
+export 'src/reactive/datalocal_change.dart';

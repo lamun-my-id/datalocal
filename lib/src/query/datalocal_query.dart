@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:datalocal/src/database/datalocal_collection.dart';
 import 'package:datalocal/src/document/datalocal_document.dart';
 import 'package:datalocal/src/exceptions/datalocal_exception.dart';
@@ -192,6 +194,49 @@ final class DataLocalQuery<T> {
       return null;
     }
     return (await sum(path)) / snapshot.documents.length;
+  }
+
+  /// Emits the current query snapshot and then one snapshot per relevant commit.
+  Stream<DataLocalQuerySnapshot<T>> watch() {
+    late StreamController<DataLocalQuerySnapshot<T>> controller;
+    StreamSubscription<Object?>? subscription;
+    Future<void> tail = Future<void>.value();
+
+    void enqueueSnapshot() {
+      tail = tail.then((_) async {
+        try {
+          final snapshot = await get();
+          if (!controller.isClosed) {
+            controller.add(snapshot);
+          }
+        } catch (error, stackTrace) {
+          if (!controller.isClosed) {
+            controller.addError(error, stackTrace);
+          }
+        }
+      });
+    }
+
+    controller = StreamController<DataLocalQuerySnapshot<T>>(
+      onListen: () {
+        subscription = _collection.changes.listen(
+          (_) => enqueueSnapshot(),
+          onError: controller.addError,
+          onDone: () {
+            tail.whenComplete(() {
+              if (!controller.isClosed) {
+                controller.close();
+              }
+            });
+          },
+        );
+        enqueueSnapshot();
+      },
+      onCancel: () async {
+        await subscription?.cancel();
+      },
+    );
+    return controller.stream;
   }
 
   bool _matches(DataLocalDocument<T> document) {

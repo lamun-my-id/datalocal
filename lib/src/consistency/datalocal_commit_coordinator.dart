@@ -58,6 +58,8 @@ final class DataLocalCommitCoordinator {
     return completer.future;
   }
 
+  Future<void> drain() => synchronized<void>(() async {});
+
   Future<void> commit(List<DataLocalStorageMutation> mutations) async {
     if (mutations.isEmpty) {
       return;

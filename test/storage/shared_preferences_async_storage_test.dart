@@ -115,6 +115,44 @@ void main() {
       await database.close();
     },
   );
+
+  test('stores encrypted payloads and survives key rotation', () async {
+    final client = _MemoryPreferencesClient();
+    final keys = DataLocalMemoryKeyProvider();
+    final encryption = DataLocalAesGcmEncryptionProvider(keyProvider: keys);
+    var database = await DataLocalDatabase.open(
+      name: 'encrypted',
+      storage: DataLocalSharedPreferencesAsyncStorage(client: client),
+      encryption: encryption,
+    );
+    var notes = database.mapCollection('notes');
+    await notes.insert(<String, Object?>{
+      'secret': 'KNOWN-PLAINTEXT-MARKER',
+    }, id: 'before');
+    await keys.rotate();
+    await notes.insert(<String, Object?>{
+      'secret': 'after rotation',
+    }, id: 'after');
+    await database.close();
+
+    expect(
+      client.values.values.join('\n').contains('KNOWN-PLAINTEXT-MARKER'),
+      isFalse,
+    );
+
+    database = await DataLocalDatabase.open(
+      name: 'encrypted',
+      storage: DataLocalSharedPreferencesAsyncStorage(client: client),
+      encryption: encryption,
+    );
+    notes = database.mapCollection('notes');
+    expect(
+      (await notes.require('before')).data['secret'],
+      'KNOWN-PLAINTEXT-MARKER',
+    );
+    expect((await notes.require('after')).data['secret'], 'after rotation');
+    await database.close();
+  });
 }
 
 DataLocalStoredRecord _record(String id) => DataLocalStoredRecord(

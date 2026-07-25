@@ -1,9 +1,17 @@
-import 'package:datalocal/src/extensions/data_item.dart';
+// ignore_for_file: no_wildcard_variable_uses
+
+import 'package:collection/collection.dart';
+import 'package:datalocal/datalocal_extension.dart';
+import 'package:datalocal/datalocal_query_extension.dart';
 import 'package:datalocal/src/extensions/list.dart';
+import 'package:datalocal/src/extensions/list_data_item_row.dart';
 import 'package:datalocal/src/models/data_filter.dart';
-import 'package:datalocal/src/models/data_item.dart';
+import 'package:datalocal/src/models/data_key.dart';
+import 'package:datalocal/src/models/data_paginate.dart';
 import 'package:datalocal/src/models/data_search.dart';
 import 'package:datalocal/src/models/data_sort.dart';
+import 'package:datalocal/utils/date_time.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 extension ListDataItem on List<DataItem> {
   /// Part Extension of [List<DataItem>] to sort data
@@ -12,12 +20,7 @@ extension ListDataItem on List<DataItem> {
       List<List<DataItem>> temp = [this];
       for (int i = 0; i < parameters.length; i++) {
         List separates = List.generate(length, (index) {
-          List<String> fields = parameters[i].key.toString().split('.');
-          if (fields.length > 1) {
-            return _getValueFromMap(fields, this[index].data);
-          } else {
-            return this[index].data[parameters[i].key];
-          }
+          return this[index].get(parameters[i].key);
         }).toSet().toList();
         separates.sort((a, b) {
           if (a == null || b == null) {
@@ -30,6 +33,20 @@ extension ListDataItem on List<DataItem> {
               b = 0;
               return !parameters[i].desc ? a.compareTo(1) : b.compareTo(1);
             }
+          } else if (a is DateTime || b is DateTime) {
+            a = DateTimeUtils.toDateTime(a);
+            b = DateTimeUtils.toDateTime(b);
+            if (a == null) {
+              a = 1;
+              b = 1;
+              return !parameters[i].desc ? a.compareTo(0) : b.compareTo(0);
+            }
+            if (b == null) {
+              a = 0;
+              b = 0;
+              return !parameters[i].desc ? a.compareTo(1) : b.compareTo(1);
+            }
+            return !parameters[i].desc ? a.compareTo(b) : b.compareTo(a);
           } else {
             return !parameters[i].desc ? a.compareTo(b) : b.compareTo(a);
           }
@@ -38,22 +55,19 @@ extension ListDataItem on List<DataItem> {
         List<List<DataItem>> store = [];
         for (List<DataItem> dTemp in temp) {
           for (dynamic separate in separates) {
-            store.add(dTemp.where((element) {
-              List<String> fields = parameters[i].key.toString().split('.');
-              if (fields.length > 1) {
-                return _getValueFromMap(fields, element.data) == separate;
-              } else {
-                return (element.data[parameters[i].key]) == separate;
-              }
-            }).toList());
+            store.add(
+              dTemp.where((element) {
+                return element.get(parameters[i].key) == separate;
+              }).toList(),
+            );
           }
         }
         temp = store;
       }
       return temp.expand((element) => element).toList();
     }
-    Set<String> ids = map((e) => e.id).toSet();
-    retainWhere((x) => ids.remove(x.id));
+    // Set<String> ids = map((e) => e.id).toSet();
+    // retainWhere((x) => ids.remove(x.id));
 
     return this;
   }
@@ -67,110 +81,213 @@ extension ListDataItem on List<DataItem> {
       DataItem d = result[index];
       for (DataFilter f in parameters) {
         try {
-          switch (f.operator) {
-            case DataFilterOperator.isEqualTo:
-              if (d.get(f.key) == f.value) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.isNotEqualTo:
-              if (d.get(f.key) != f.value) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.isGreaterThanOrEqualTo:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) >= f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.isGreaterThan:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isAfter(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) > f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.isLessThanOrEqualTo:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isBefore(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) <= f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.isLessThan:
-              if (f.value.runtimeType == DateTime) {
-                if ((d.get(f.key) as DateTime).isBefore(f.value as DateTime)) {
-                } else {
-                  i.add(index);
-                }
-              } else {
-                if (d.get(f.key) < f.value) {
-                } else {
-                  i.add(index);
-                }
-              }
-              break;
-            case DataFilterOperator.whereIn:
-              if ((f.value as List).contains(d.get(f.key))) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.whereNotIn:
-              if (!(f.value as List).contains(d.get(f.key))) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.arrayContains:
-              if (((d.get(f.key) ?? []) as List).contains(f.value)) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.arrayContainsAny:
-              if (((d.get(f.key) ?? []) as List).containAny(f.value as List)) {
-              } else {
-                i.add(index);
-              }
-              break;
-            case DataFilterOperator.isNull:
-              if (f.value == "false" && d.get(f.key) == null) {
-                i.add(index);
-              } else if (f.value == "true" && d.get(f.key) != null) {
-                i.add(index);
-              }
-              break;
-            default:
-              if (d.get(f.key) == f.value) {
-              } else {
-                i.add(index);
-              }
-              break;
+          if (f.isEqualTo != null) {
+            if (d.get(f.key) == f.isEqualTo) {
+            } else {
+              i.add(index);
+            }
           }
+          if (f.isNotEqualTo != null) {
+            if (d.get(f.key) != f.isNotEqualTo) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.isGreaterThanOrEqualTo != null) {
+            if (f.isGreaterThanOrEqualTo is DateTime) {
+              if ((DateTimeUtils.toDateTime(
+                d.get(f.key),
+              )!).isAfter(f.isGreaterThanOrEqualTo as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) >= f.isGreaterThanOrEqualTo) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.isGreaterThan != null) {
+            if (f.isGreaterThan is DateTime) {
+              if ((DateTimeUtils.toDateTime(
+                d.get(f.key),
+              )!).isAfter(f.isGreaterThan as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) > f.isGreaterThan) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.isLessThanOrEqualTo != null) {
+            if (f.isLessThanOrEqualTo is DateTime) {
+              if ((DateTimeUtils.toDateTime(
+                d.get(f.key),
+              )!).isBefore(f.isLessThanOrEqualTo as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) <= f.isLessThanOrEqualTo) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.isLessThan != null) {
+            if (f.isLessThan is DateTime) {
+              if ((DateTimeUtils.toDateTime(
+                d.get(f.key),
+              )!).isBefore(f.isLessThan as DateTime)) {
+              } else {
+                i.add(index);
+              }
+            } else {
+              if (d.get(f.key) < f.isLessThan) {
+              } else {
+                i.add(index);
+              }
+            }
+          }
+          if (f.whereIn != null) {
+            if ((f.whereIn as List).contains(d.get(f.key))) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.whereNotIn != null) {
+            if ((f.whereIn as List).contains(d.get(f.key))) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.arrayContains != null) {
+            if ((d.get(f.key) as List).contains(f.arrayContains)) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.arrayContainsAny != null) {
+            if ((d.get(f.key) as List).contains(f.arrayContains)) {
+            } else {
+              i.add(index);
+            }
+          }
+          if (f.isNull != null) {
+            if ((d.get(f.key) != null) == (f.isNull as bool)) {
+            } else {
+              i.add(index);
+            }
+          }
+          // switch (f.operator) {
+          //   case DataFilterOperator.isEqualTo:
+          //     if (d.get(f.key) == f.value) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.isNotEqualTo:
+          //     if (d.get(f.key) != f.value) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.isGreaterThanOrEqualTo:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isAfter(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) >= f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.isGreaterThan:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isAfter(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) > f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.isLessThanOrEqualTo:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isBefore(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) <= f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.isLessThan:
+          //     if (f.value is DateTime) {
+          //       if (DateTimeUtils.toDateTime(d.get(f.key))!.isBefore(f.value as DateTime)) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     } else {
+          //       if (d.get(f.key) < f.value) {
+          //       } else {
+          //         i.add(index);
+          //       }
+          //     }
+          //     break;
+          //   case DataFilterOperator.whereIn:
+          //     if ((f.value as List).contains(d.get(f.key))) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.whereNotIn:
+          //     if (!(f.value as List).contains(d.get(f.key))) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.arrayContains:
+          //     if (((d.get(f.key) ?? []) as List).contains(f.value)) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.arrayContainsAny:
+          //     if (((d.get(f.key) ?? []) as List).containAny(f.value as List)) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   case DataFilterOperator.isNull:
+          //     if (f.value == "false" && d.get(f.key) == null) {
+          //       i.add(index);
+          //     } else if (f.value == "true" && d.get(f.key) != null) {
+          //       i.add(index);
+          //     }
+          //     break;
+          //   default:
+          //     if (d.get(f.key) == f.value) {
+          //     } else {
+          //       i.add(index);
+          //     }
+          //     break;
+          // }
         } catch (e) {
+          // i.add(index);
           // debugPrint("===========asasasas=============${d.get(f.key)}");
           // debugPrint("===========asasasas=============${d.get(f.key)}");
           // result.add(d);
@@ -188,8 +305,8 @@ extension ListDataItem on List<DataItem> {
         }
       }
     }
-    Set<String> ids = result.map((e) => e.id).toSet();
-    result.retainWhere((x) => ids.remove(x.id));
+    // Set<String> ids = result.map((e) => e.id).toSet();
+    // result.retainWhere((x) => ids.remove(x.id));
 
     return result;
   }
@@ -208,7 +325,7 @@ extension ListDataItem on List<DataItem> {
     if (parameter.keys != null && parameter.value != null) {
       for (DataItem data in this) {
         String validator = "";
-        for (String key in parameter.keys!) {
+        for (DataKey key in parameter.keys!) {
           validator += data.get(key) ?? "";
         }
         // final RegExp filterRegExp =
@@ -233,22 +350,200 @@ extension ListDataItem on List<DataItem> {
     result.retainWhere((x) => ids.remove(x.id));
     return result;
   }
-}
 
-dynamic _getValueFromMap(List<String> fields, Map<String, dynamic> data) {
-  Map<String, dynamic> param = data;
-  dynamic value;
-  for (int i = 0; i < fields.length; i++) {
-    // if (fields.isNotEmpty) {
-    if (i == fields.length - 1) {
-      value = param[fields[i]];
-    } else {
-      param = (param[fields[i]] ?? {}) ?? {};
+  /// Part Extension of [List<DataItem>] to sort data
+  List<List<DataItem>> groupData(List<dynamic> parameters) {
+    if (parameters.isNotEmpty) {
+      List<List<DataItem>> temp = [this];
+      for (int i = 0; i < parameters.length; i++) {
+        List separates = List.generate(length, (index) {
+          return this[index].get(parameters[i]);
+        }).toSet().toList();
+        separates.sort((a, b) {
+          if (a == null || b == null) {
+            if (a == null) {
+              a = 1;
+              b = 1;
+              return a.compareTo(0);
+            } else {
+              a = 0;
+              b = 0;
+              return a.compareTo(1);
+            }
+          } else if (a is DateTime || b is DateTime) {
+            a = DateTimeUtils.toDateTime(a);
+            b = DateTimeUtils.toDateTime(b);
+            if (a == null) {
+              a = 1;
+              b = 1;
+              return a.compareTo(0);
+            }
+            if (b == null) {
+              a = 0;
+              b = 0;
+              return a.compareTo(1);
+            }
+            return a.compareTo(b);
+          } else {
+            return a.compareTo(b);
+          }
+        });
+        List<List<DataItem>> store = [];
+        for (List<DataItem> dTemp in temp) {
+          for (dynamic separate in separates) {
+            store.add(
+              dTemp.where((element) {
+                return element.get(parameters[i]) == separate;
+              }).toList(),
+            );
+          }
+        }
+        temp = store;
+      }
+      return temp;
     }
-    // } else {
-    //   value = data[fields[i]];
-    // }
+    // Set<String> ids = map((e) => e.id).toSet();
+    // retainWhere((x) => ids.remove(x.id));
+
+    return [this];
   }
 
-  return value;
+  // default page number is 1 and size is 30
+  List<DataItem> paginate(DataPaginate value) {
+    List<List<DataItem>> data = List<List<DataItem>>.from(chunks(value.size));
+    if (value.page < 1) throw "Page ready at 1 to ${data.length}";
+    return data[value.page - 1];
+  }
+
+  /// Find More specific query Data with this function
+  Future<List<DataItemRow>> execute(
+    List<dynamic> selects, {
+    List<DataFilter>? filters,
+    List<DataSort>? sorts,
+    List<dynamic>? groups,
+    int? limit,
+  }) async {
+    if (limit != null) assert(limit > 0, "Limit harus diatas 0");
+    List<DataItem> items = this;
+    if (filters != null) items = filterData(filters);
+    List<DataItemRow> result = await DataCompute().isolate((arguments) async {
+      await initializeDateFormatting();
+      List<DataItem> items = arguments[0];
+      List<dynamic> selects = arguments[1];
+      // List<DataFilter>? filters = _[2];
+      // List<DataSort>? sorts = _[3];
+      List<dynamic>? groups = arguments[4];
+      List<dynamic> k =
+          groups?.map((key) {
+            if (key is String) return DataKey(key);
+            if (key is DataKey) return key;
+            if (key is DataSelectDate) return key;
+            if (key is QueryDistinct) return DataKey(key.key, as: key.as);
+            throw "Please fill key with String or DataKey value";
+          }).toList() ??
+          [];
+      List<dynamic> groupQueries = [
+        ...selects.whereType<QueryGroup>(),
+        ...(groups ?? []).whereType<String>(),
+        ...(groups ?? []).whereType<DataSelectDate>(),
+      ];
+      List<dynamic> normQueries = selects
+          .where(
+            (value) =>
+                value is String || value is DataKey || value is DataSelectDate,
+          )
+          .map((value) {
+            if (value is String) {
+              return DataKey(value);
+            } else {
+              return value;
+            }
+          })
+          .toList();
+      // print("dataGroup.length");
+      List<List<DataItem>> dataGroup =
+          (groups ?? []).isEmpty && groupQueries.isNotEmpty
+          ? [items]
+          : items.groupData(k);
+      // print(dataGroup.length);
+      List<DataItemRow> result = [];
+      for (List<DataItem> dg in dataGroup) {
+        if (groupQueries.isNotEmpty) {
+          Map<String, dynamic> temp = {};
+          for (dynamic gQ in groupQueries) {
+            for (DataItem item in dg) {
+              if (gQ is QueryCount) {
+                try {
+                  temp[gQ.as ?? 'countOf${gQ.key}'] += item.get(gQ.key) != null
+                      ? 1
+                      : 0;
+                } catch (e) {
+                  temp[gQ.as ?? 'countOf${gQ.key}'] = item.get(gQ.key) != null
+                      ? 1
+                      : 0;
+                }
+              } else if (gQ is QuerySum) {
+                try {
+                  temp[gQ.as ?? 'sumOf${gQ.key}'] += item.get(gQ.key) ?? 0;
+                } catch (e) {
+                  temp[gQ.as ?? 'sumOf${gQ.key}'] = item.get(gQ.key) ?? 0;
+                }
+              } else if (gQ is QueryAverage) {
+                try {
+                  temp[gQ.as ?? 'averageOf${gQ.key}'] += item.get(gQ.key) ?? 0;
+                } catch (e) {
+                  temp[gQ.as ?? 'averageOf${gQ.key}'] = item.get(gQ.key) ?? 0;
+                }
+              } else if (gQ is QueryDistinct) {
+                try {
+                  temp[gQ.as ?? 'distinctOf${gQ.key}'] = item.get(gQ.key);
+                } catch (e) {
+                  temp[gQ.as ?? 'distinctOf${gQ.key}'] = item.get(gQ.key) ?? 0;
+                }
+              } else if (gQ is DataSelectDate) {
+                temp[gQ.as ?? "dateFormatOf${gQ.key}"] = item.get(gQ);
+              } else {
+                temp[gQ] = item.get(gQ);
+              }
+            }
+            if (gQ is QueryAverage) {
+              if (dg.isEmpty) {
+                temp[gQ.as ?? 'averageOf${gQ.key}'] = 0;
+              } else {
+                temp[gQ.as ?? 'averageOf${gQ.key}'] =
+                    temp[gQ.as ?? 'averageOf${gQ.key}'] / dg.length;
+              }
+            }
+            if (normQueries.isNotEmpty) {
+              for (DataItem item in dg) {
+                for (dynamic nm in normQueries) {
+                  temp[nm.key] = item.get(nm);
+                }
+              }
+            }
+          }
+          result.add(DataItemRow.fromMap(temp));
+          if (sorts != null) {
+            result = result.sortData(sorts);
+          }
+        } else {
+          if (normQueries.isNotEmpty) {
+            // print(dg.length);
+            for (DataItem item in dg) {
+              Map<String, dynamic> temp = {};
+              for (dynamic nm in normQueries) {
+                temp[nm.as ?? nm.key] = item.get(nm);
+              }
+              result.add(DataItemRow.fromMap(temp));
+            }
+          }
+        }
+      }
+      return result;
+    }, args: [items, selects, filters, sorts, groups]);
+    if (limit != null && result.length > limit) {
+      result = result.slices(limit).toList().first;
+    }
+    return result;
+  }
 }

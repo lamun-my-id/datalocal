@@ -1,3 +1,5 @@
+// ignore_for_file: no_wildcard_variable_uses
+
 import 'dart:convert';
 
 import 'package:datalocal/utils/date_time.dart';
@@ -5,34 +7,46 @@ import 'package:datalocal/utils/date_time.dart';
 class DataContainer {
   String name;
   String? path;
+  int seq;
   DateTime? createdAt;
   DateTime? updatedAt;
+  DateTime? lastDataCreatedAt;
+  DateTime? lastDataUpdatedAt;
   List<String> ids;
+  Map<String, dynamic> params;
 
   DataContainer({
     required this.name,
     this.path,
+    this.seq = 0,
     this.createdAt,
     this.updatedAt,
+    this.lastDataCreatedAt,
+    this.lastDataUpdatedAt,
     required this.ids,
-  });
+    Map<String, dynamic>? param,
+  }) : params = param ?? {};
 
   factory DataContainer.fromMap(Map<String, dynamic> value) {
     return DataContainer(
       name: value['name'],
       path: value['path'],
+      seq: value['seq'] ?? 0,
       createdAt: DateTimeUtils.toDateTime(value['createdAt']),
       updatedAt: DateTimeUtils.toDateTime(value['createdAt']),
+      lastDataCreatedAt: DateTimeUtils.toDateTime(value['lastDataCreatedAt']),
+      lastDataUpdatedAt: DateTimeUtils.toDateTime(value['lastDataUpdatedAt']),
       ids: List<String>.from(value['ids'] ?? []),
+      param: value['param'],
     );
   }
 
   String toJson() {
     return jsonEncode(
       toMap(),
-      toEncodable: (_) {
-        if (_ is DateTime) {
-          return DateTimeUtils.toDateTime(_).toString();
+      toEncodable: (value) {
+        if (value is DateTime) {
+          return DateTimeUtils.toDateTime(value).toString();
         } else {
           return "";
         }
@@ -44,9 +58,13 @@ class DataContainer {
     return {
       "name": name,
       "path": path,
+      "seq": seq,
       "createdAt": createdAt,
       "updatedAt": updatedAt,
+      "lastDataCreatedAt": lastDataCreatedAt,
+      "lastDataUpdatedAt": lastDataUpdatedAt,
       "ids": ids,
+      "param": params,
     };
   }
 }

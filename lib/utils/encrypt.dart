@@ -4,7 +4,7 @@ import 'dart:convert' as convert;
 import 'dart:math';
 import 'dart:typed_data';
 
-import 'package:pointycastle/export.dart' hide Signer hide RSASigner;
+import 'package:pointycastle/export.dart' hide RSASigner, Signer;
 
 class EncryptUtil {
   static final Key _key = Key.fromUtf8('my 32 length key................');
@@ -89,14 +89,14 @@ class _Encrypted {
 
   /// Creates an Encrypted object from a Base64 string.
   _Encrypted.fromBase64(String encoded)
-      : _bytes = convert.base64.decode(encoded);
+    : _bytes = convert.base64.decode(encoded);
 
   /// Creates an Encrypted object from a Base64 string.
   // _Encrypted.from64(String encoded) : _bytes = convert.base64.decode(encoded);
 
   /// Creates an Encrypted object from a UTF-8 string.
   _Encrypted.fromUtf8(String input)
-      : _bytes = Uint8List.fromList(convert.utf8.encode(input));
+    : _bytes = Uint8List.fromList(convert.utf8.encode(input));
 
   /// Creates an Encrypted object from a length.
   _Encrypted.fromLength(int length) : _bytes = Uint8List(length);
@@ -131,8 +131,11 @@ class Key extends _Encrypted {
   Key.fromLength(int length) : super.fromLength(length);
   Key.fromSecureRandom(int length) : super(_SecureRandom(length).bytes);
 
-  Key stretch(int desiredKeyLength,
-      {int iterationCount = 100, Uint8List? salt}) {
+  Key stretch(
+    int desiredKeyLength, {
+    int iterationCount = 100,
+    Uint8List? salt,
+  }) {
     salt ??= _SecureRandom(desiredKeyLength).bytes;
 
     final params = Pbkdf2Parameters(salt, iterationCount, desiredKeyLength);
@@ -170,8 +173,10 @@ class _Encrypter {
 
   /// Calls [decrypt] on the wrapped _Algorithm.
   String decrypt(_Encrypted encrypted, {IV? iv}) {
-    return convert.utf8
-        .decode(decryptBytes(encrypted, iv: iv), allowMalformed: true);
+    return convert.utf8.decode(
+      decryptBytes(encrypted, iv: iv),
+      allowMalformed: true,
+    );
   }
 
   /// Sugar for `decrypt(Encrypted.fromBase16(encoded))`.
@@ -190,8 +195,9 @@ class _SecureRandom {
   final Uint8List _bytes;
 
   _SecureRandom(int length)
-      : _bytes = Uint8List.fromList(
-            List.generate(length, (i) => _generator.nextInt(256)));
+    : _bytes = Uint8List.fromList(
+        List.generate(length, (i) => _generator.nextInt(256)),
+      );
 
   Uint8List get bytes => _bytes;
 

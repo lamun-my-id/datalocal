@@ -123,24 +123,20 @@ Journal states:
 
 ```text
 prepared
-applying
 committed
 ```
 
 A journal entry includes:
 
 - transaction ID
-- previous database sequence
-- target database sequence
 - affected record keys
-- before/after checksums or recovery references
+- complete before and after record images
 - state
 
 Recovery policy:
 
-- `prepared`: discard staged values.
-- `applying`: restore the last committed state or complete a verified replay.
-- `committed`: clean temporary values.
+- `prepared`: restore every before image.
+- `committed`: replay every after image, then clear the journal.
 
 No observer sees an uncommitted transaction.
 
@@ -169,4 +165,3 @@ New writes never use the legacy cipher or key.
 - A format-breaking change requires a migration and a new format identifier.
 - Unknown required capabilities cause an explicit unsupported-format exception.
 - Unknown optional fields are preserved where practical.
-

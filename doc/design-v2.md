@@ -284,4 +284,3 @@ All adapters share contract tests and the public collection/query model.
 - encryption tamper tests passing
 - documented benchmark results
 - reviewed upgrade and threat-model documentation
-

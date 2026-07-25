@@ -199,4 +199,3 @@ Stable release is blocked if:
 - a mutation reports success before durable adapter completion
 - corruption is silently converted into empty data
 - plaintext or key material appears in default diagnostics
-

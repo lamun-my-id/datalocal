@@ -1,3 +1,13 @@
+## 2.0.0-dev.1
+
+* Introduce the DataLocal 2 document, collection, query, and typed-codec API.
+* Add serialized logical commits, batches, recovery journal, and revision checks.
+* Add versioned `SharedPreferencesAsync` storage with manifests and integrity checks.
+* Add AES-256-GCM authenticated encryption and platform secure-key storage.
+* Add resumable, explicitly cleaned migration from the DataLocal 1.x format.
+* Add reactive query snapshots, ordered commit events, and hardened close behavior.
+* Add real Flutter E2E scenarios and cross-platform CI release gates.
+
 ## 1.0.39
 
 * Upgrade to Flutter 3.44 and Dart 3.12.

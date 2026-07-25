@@ -13,8 +13,9 @@ export 'src/document/datalocal_metadata.dart';
 export 'src/document/document_id.dart';
 export 'src/database/datalocal_collection.dart';
 export 'src/database/datalocal_database.dart';
-export 'src/database/datalocal_write_batch.dart';
-export 'src/consistency/datalocal_commit_coordinator.dart';
+export 'src/database/datalocal_write_batch.dart' show DataLocalWriteBatch;
+export 'src/consistency/datalocal_commit_coordinator.dart'
+    show DataLocalCommitPhase, DataLocalFailureInjector;
 export 'src/exceptions/datalocal_exception.dart';
 export 'src/encryption/datalocal_encryption.dart';
 export 'src/encryption/aes_gcm_encryption_provider.dart';
@@ -27,4 +28,5 @@ export 'src/query/datalocal_field_path.dart';
 export 'src/query/datalocal_query.dart';
 export 'src/query/datalocal_query_cursor.dart';
 export 'src/query/datalocal_query_snapshot.dart';
-export 'src/reactive/datalocal_change.dart';
+export 'src/reactive/datalocal_change.dart'
+    show DataLocalCommitEvent, DataLocalDocumentChange, DataLocalMutationType;

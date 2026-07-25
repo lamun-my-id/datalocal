@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:datalocal/datalocal.dart';
-import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import '../fixtures/legacy_v1_cipher.dart';
 
 void main() {
   test(
@@ -113,7 +114,7 @@ void main() {
     'reports missing legacy records without deleting source state',
     () async {
       final preferences = _MemoryPreferencesClient()..installFixture();
-      preferences.values.remove(EncryptUtil().encript('legacy--item-2'));
+      preferences.values.remove(encryptLegacyV1Fixture('legacy--item-2'));
       final database = await DataLocalDatabase.open(
         name: 'incomplete-db',
         storage: DataLocalMemoryStorage(),
@@ -148,9 +149,8 @@ final class _MemoryPreferencesClient
   bool failNextMigrationStateWrite = false;
 
   void installFixture() {
-    final encryption = EncryptUtil();
-    final encryptedName = encryption.encript('DataLocal-legacy');
-    values[encryption.encript(encryptedName)] = encryption.encript(
+    final encryptedName = encryptLegacyV1Fixture('DataLocal-legacy');
+    values[encryptLegacyV1Fixture(encryptedName)] = encryptLegacyV1Fixture(
       jsonEncode(<String, Object?>{
         'name': encryptedName,
         'seq': 2,
@@ -158,7 +158,7 @@ final class _MemoryPreferencesClient
         'param': <String, Object?>{},
       }),
     );
-    values[encryption.encript('legacy--item-1')] = encryption.encript(
+    values[encryptLegacyV1Fixture('legacy--item-1')] = encryptLegacyV1Fixture(
       jsonEncode(<String, Object?>{
         'id': 'item-1',
         'name': 'legacy',
@@ -172,7 +172,7 @@ final class _MemoryPreferencesClient
         'files': <Object?>[],
       }),
     );
-    values[encryption.encript('legacy--item-2')] = encryption.encript(
+    values[encryptLegacyV1Fixture('legacy--item-2')] = encryptLegacyV1Fixture(
       jsonEncode(<String, Object?>{
         'id': 'item-2',
         'name': 'legacy',

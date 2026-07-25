@@ -38,6 +38,7 @@ dependencies:
   datalocal:
     path: ../
   shared_preferences: ^2.5.5
+  pointycastle: ^4.0.0
 
 dev_dependencies:
   flutter_test:

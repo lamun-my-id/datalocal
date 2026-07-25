@@ -1,7 +1,7 @@
 name: datalocal
-description: "Flutter dependency to save data via local saved with state, easy to use and fast."
+description: "Encrypted document-style local persistence for Flutter with queries, reactive snapshots, migration, and recoverable SharedPreferences storage."
 repository: "https://github.com/lamun-my-id/datalocal.git"
-version: 1.0.39
+version: 2.0.0-dev.1
 # test    : dart pub publish --dry-run
 # deploy  : dart pub publish
 
@@ -15,7 +15,6 @@ dependencies:
   shared_preferences: ^2.5.5
   flutter_secure_storage: ^10.3.1
   pointycastle: ^4.0.0
-  # pointycastle: ^3.7.4
   intl: ^0.20.3
   collection: ^1.19.1
 
@@ -28,3 +27,10 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+topics:
+  - database
+  - encryption
+  - local-storage
+  - persistence
+  - shared-preferences

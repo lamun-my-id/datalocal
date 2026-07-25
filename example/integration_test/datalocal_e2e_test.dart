@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:datalocal/datalocal.dart';
-import 'package:datalocal/utils/encrypt.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'support/legacy_v1_cipher.dart';
 
 const _useDeviceKeys = bool.fromEnvironment(
   'DATALOCAL_E2E_DEVICE_KEYS',
@@ -159,14 +160,13 @@ void main() {
     const stateName = 'legacy-e2e';
     await _resetDatabase(databaseName);
     final preferences = SharedPreferencesAsync();
-    final legacy = EncryptUtil();
-    final encryptedName = legacy.encript('DataLocal-$stateName');
-    final containerKey = legacy.encript(encryptedName);
+    final encryptedName = encryptLegacyV1Fixture('DataLocal-$stateName');
+    final containerKey = encryptLegacyV1Fixture(encryptedName);
     const path = 'legacy-e2e--legacy-id';
-    final recordKey = legacy.encript(path);
+    final recordKey = encryptLegacyV1Fixture(path);
     await preferences.setString(
       containerKey,
-      legacy.encript(
+      encryptLegacyV1Fixture(
         jsonEncode(<String, Object?>{
           'name': encryptedName,
           'seq': 1,
@@ -177,7 +177,7 @@ void main() {
     );
     await preferences.setString(
       recordKey,
-      legacy.encript(
+      encryptLegacyV1Fixture(
         jsonEncode(<String, Object?>{
           'id': 'legacy-id',
           'name': stateName,

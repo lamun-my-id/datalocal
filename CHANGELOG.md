@@ -4,8 +4,9 @@
 * Add composable OR groups through `whereAny`; chained filters remain AND.
 * Add `startAt`, `endAt`, `endBefore`, and `limitToLast` pagination.
 * Add explicit first/last placement for null and missing sort values.
+* Add an optional atomic-batch storage contract used by transactional adapters.
 * Replace the example app with an encrypted 10/1,000/10,000-document query
-  playground and reproducible timing scenarios.
+  playground comparing SharedPreferences and SQLite.
 
 ## 2.0.0-dev.1
 

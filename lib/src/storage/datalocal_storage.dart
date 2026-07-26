@@ -96,6 +96,25 @@ final class DataLocalStoredRecord {
   }
 }
 
+/// One write or deletion in an atomic storage batch.
+final class DataLocalStorageBatchOperation {
+  /// Creates a record write operation.
+  const DataLocalStorageBatchOperation.write(this.record) : delete = null;
+
+  /// Creates a record deletion operation.
+  const DataLocalStorageBatchOperation.delete({
+    required String collection,
+    required String id,
+  }) : record = null,
+       delete = (collection: collection, id: id);
+
+  /// Record written by this operation, when it is a write.
+  final DataLocalStoredRecord? record;
+
+  /// Identity removed by this operation, when it is a deletion.
+  final ({String collection, String id})? delete;
+}
+
 /// Persistence boundary implemented by every DataLocal storage backend.
 abstract interface class DataLocalStorage {
   DataLocalStorageCapabilities get capabilities;
@@ -124,6 +143,15 @@ abstract interface class DataLocalStorage {
   Future<void> clearJournal();
 
   Future<void> close();
+}
+
+/// Optional storage capability for applying a logical batch atomically.
+///
+/// Implementations must commit every [DataLocalStorageBatchOperation] in one
+/// native transaction or leave storage unchanged.
+abstract interface class DataLocalAtomicBatchStorage {
+  /// Applies [operations] as one atomic storage transaction.
+  Future<void> applyBatch(List<DataLocalStorageBatchOperation> operations);
 }
 
 /// Optional post-recovery integrity hook for manifest-based adapters.

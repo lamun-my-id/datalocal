@@ -1,4 +1,5 @@
 import 'package:datalocal/datalocal.dart';
+import 'package:datalocal_sqlite/datalocal_sqlite.dart';
 import 'package:flutter/material.dart';
 
 import 'query_playground.dart';
@@ -9,9 +10,9 @@ Future<void> main() async {
 }
 
 class DataLocalExampleApp extends StatelessWidget {
-  const DataLocalExampleApp({super.key, this.databaseFactory});
+  const DataLocalExampleApp({super.key, this.databaseFactories});
 
-  final DataLocalDatabaseFactory? databaseFactory;
+  final Map<String, DataLocalDatabaseFactory>? databaseFactories;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -21,16 +22,34 @@ class DataLocalExampleApp extends StatelessWidget {
       useMaterial3: true,
     ),
     home: QueryPlaygroundPage(
-      databaseFactory: databaseFactory ?? openExampleDatabase,
+      databaseFactories:
+          databaseFactories ??
+          <String, DataLocalDatabaseFactory>{
+            'SharedPreferences': openSharedPreferencesDatabase,
+            'SQLite': openSqliteDatabase,
+          },
     ),
   );
 }
 
-Future<DataLocalDatabase> openExampleDatabase() async {
-  const databaseName = 'datalocal-v2-query-playground';
+Future<DataLocalDatabase> openSharedPreferencesDatabase() async {
+  const databaseName = 'datalocal-v2-query-playground-preferences';
   return DataLocalDatabase.open(
     name: databaseName,
     storage: DataLocalSharedPreferencesAsyncStorage(),
+    encryption: DataLocalAesGcmEncryptionProvider(
+      keyProvider: DataLocalSecureStorageKeyProvider(
+        databaseName: databaseName,
+      ),
+    ),
+  );
+}
+
+Future<DataLocalDatabase> openSqliteDatabase() async {
+  const databaseName = 'datalocal-v2-query-playground-sqlite';
+  return DataLocalDatabase.open(
+    name: databaseName,
+    storage: DataLocalSqliteStorage(),
     encryption: DataLocalAesGcmEncryptionProvider(
       keyProvider: DataLocalSecureStorageKeyProvider(
         databaseName: databaseName,

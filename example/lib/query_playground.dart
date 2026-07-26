@@ -6,9 +6,9 @@ import 'package:flutter/material.dart';
 typedef DataLocalDatabaseFactory = Future<DataLocalDatabase> Function();
 
 class QueryPlaygroundPage extends StatefulWidget {
-  const QueryPlaygroundPage({required this.databaseFactory, super.key});
+  const QueryPlaygroundPage({required this.databaseFactories, super.key});
 
-  final DataLocalDatabaseFactory databaseFactory;
+  final Map<String, DataLocalDatabaseFactory> databaseFactories;
 
   @override
   State<QueryPlaygroundPage> createState() => _QueryPlaygroundPageState();
@@ -32,16 +32,18 @@ class _QueryPlaygroundPageState extends State<QueryPlaygroundPage> {
   bool _busy = false;
   String _status = 'Opening encrypted database…';
   int _documentCount = 0;
+  late String _backend;
 
   @override
   void initState() {
     super.initState();
+    _backend = widget.databaseFactories.keys.first;
     _open();
   }
 
   Future<void> _open() async {
     try {
-      final database = await widget.databaseFactory();
+      final database = await widget.databaseFactories[_backend]!();
       final products = database.mapCollection(_collectionName);
       final count = await products.query().count();
       if (!mounted) {
@@ -58,6 +60,21 @@ class _QueryPlaygroundPageState extends State<QueryPlaygroundPage> {
       if (mounted) setState(() => _error = error);
     }
   }
+
+  Future<void> _selectBackend(String backend) => _runBusy(() async {
+    setState(() => _status = 'Opening $backend…');
+    await _database?.close();
+    final database = await widget.databaseFactories[backend]!();
+    final products = database.mapCollection(_collectionName);
+    final count = await products.query().count();
+    setState(() {
+      _backend = backend;
+      _database = database;
+      _products = products;
+      _documentCount = count;
+      _status = 'Ready';
+    });
+  });
 
   Future<void> _seed(int count) => _runBusy(() async {
     final products = _products!;
@@ -118,7 +135,7 @@ class _QueryPlaygroundPageState extends State<QueryPlaygroundPage> {
             'Running ${index + 1}/${_scenarios.length}: ${scenario.name}',
       );
       final result = await scenario.run(_products!);
-      if (mounted) setState(() => _results.add(result));
+      if (mounted) setState(() => _results.add(result.forBackend(_backend)));
       await Future<void>.delayed(Duration.zero);
     }
     setState(() => _status = 'Completed ${_scenarios.length} scenarios');
@@ -134,7 +151,7 @@ class _QueryPlaygroundPageState extends State<QueryPlaygroundPage> {
     final result = await scenario.run(_products!);
     setState(() {
       _results.removeWhere((item) => item.name == result.name);
-      _results.insert(0, result);
+      _results.insert(0, result.forBackend(_backend));
       _status = '${scenario.name} completed';
     });
   });
@@ -343,12 +360,30 @@ class _QueryPlaygroundPageState extends State<QueryPlaygroundPage> {
             padding: const EdgeInsets.all(16),
             children: <Widget>[
               Text(
-                'Encrypted SharedPreferences dataset',
+                'Encrypted DataLocal dataset',
                 style: Theme.of(context).textTheme.titleLarge,
               ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                key: const Key('backend-selector'),
+                initialValue: _backend,
+                decoration: const InputDecoration(labelText: 'Storage backend'),
+                items: <DropdownMenuItem<String>>[
+                  for (final backend in widget.databaseFactories.keys)
+                    DropdownMenuItem(value: backend, child: Text(backend)),
+                ],
+                onChanged: _busy
+                    ? null
+                    : (value) {
+                        if (value != null && value != _backend) {
+                          _selectBackend(value);
+                        }
+                      },
+              ),
+              const SizedBox(height: 8),
               const SizedBox(height: 4),
               Text(
-                '$_documentCount documents · $_status',
+                '$_backend · $_documentCount documents · $_status',
                 key: const Key('playground-status'),
               ),
               if (_busy) ...<Widget>[
@@ -413,7 +448,8 @@ class _QueryPlaygroundPageState extends State<QueryPlaygroundPage> {
                   Card(
                     child: ListTile(
                       title: Text(
-                        '${result.name} · ${result.elapsed.inMicroseconds} µs',
+                        '${result.backend} · ${result.name} · '
+                        '${result.elapsed.inMicroseconds} µs',
                       ),
                       subtitle: Text(
                         'matched ${result.matchedCount}\n'
@@ -468,6 +504,7 @@ class QueryScenario {
 
 class QueryRunResult {
   const QueryRunResult({
+    this.backend = '',
     required this.name,
     required this.elapsed,
     required this.matchedCount,
@@ -488,10 +525,20 @@ class QueryRunResult {
   );
 
   final String name;
+  final String backend;
   final Duration elapsed;
   final int matchedCount;
   final String details;
   final List<String> preview;
+
+  QueryRunResult forBackend(String value) => QueryRunResult(
+    backend: value,
+    name: name,
+    elapsed: elapsed,
+    matchedCount: matchedCount,
+    details: details,
+    preview: preview,
+  );
 }
 
 List<String> _preview(

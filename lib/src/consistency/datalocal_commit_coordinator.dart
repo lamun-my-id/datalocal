@@ -131,6 +131,20 @@ final class DataLocalCommitCoordinator {
     List<_JournalEntry> entries, {
     required bool useAfter,
   }) async {
+    if (_storage case final DataLocalAtomicBatchStorage atomicStorage) {
+      await atomicStorage.applyBatch(<DataLocalStorageBatchOperation>[
+        for (final entry in entries)
+          if ((useAfter ? entry.after : entry.before)
+              case final DataLocalStoredRecord record)
+            DataLocalStorageBatchOperation.write(record)
+          else
+            DataLocalStorageBatchOperation.delete(
+              collection: entry.collection,
+              id: entry.id,
+            ),
+      ]);
+      return;
+    }
     for (final entry in entries) {
       final record = useAfter ? entry.after : entry.before;
       if (record == null) {

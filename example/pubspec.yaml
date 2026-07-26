@@ -37,6 +37,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   datalocal:
     path: ../
+  datalocal_sqlite:
+    path: ../../datalocal_sqlite
   shared_preferences: ^2.5.5
   pointycastle: ^4.0.0
 
@@ -52,6 +54,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+
+dependency_overrides:
+  datalocal:
+    path: ../
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

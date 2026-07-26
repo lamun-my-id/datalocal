@@ -1,5 +1,6 @@
 import 'package:datalocal/datalocal.dart';
 import 'package:example/main.dart';
+import 'package:example/query_playground.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,7 +12,11 @@ void main() {
 
   testWidgets('renders every query playground scenario', (tester) async {
     await tester.pumpWidget(
-      DataLocalExampleApp(databaseFactory: openMemoryDatabase),
+      DataLocalExampleApp(
+        databaseFactories: <String, DataLocalDatabaseFactory>{
+          'Memory': openMemoryDatabase,
+        },
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -30,7 +35,11 @@ void main() {
 
   testWidgets('seeds ten documents and executes all scenarios', (tester) async {
     await tester.pumpWidget(
-      DataLocalExampleApp(databaseFactory: openMemoryDatabase),
+      DataLocalExampleApp(
+        databaseFactories: <String, DataLocalDatabaseFactory>{
+          'Memory': openMemoryDatabase,
+        },
+      ),
     );
     await tester.pumpAndSettle();
 

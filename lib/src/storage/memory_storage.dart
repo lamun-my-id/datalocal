@@ -5,7 +5,8 @@ import 'package:datalocal/src/exceptions/datalocal_exception.dart';
 import 'package:datalocal/src/storage/datalocal_storage.dart';
 
 /// In-memory storage used for unit tests and ephemeral databases.
-final class DataLocalMemoryStorage implements DataLocalStorage {
+final class DataLocalMemoryStorage
+    implements DataLocalStorage, DataLocalAtomicBatchStorage {
   DataLocalMemoryStorage({
     this.operationDelay = Duration.zero,
     Map<String, Map<String, DataLocalStoredRecord>>? seed,
@@ -21,10 +22,10 @@ final class DataLocalMemoryStorage implements DataLocalStorage {
   @override
   DataLocalStorageCapabilities get capabilities =>
       const DataLocalStorageCapabilities(
-        supportsAtomicBatch: false,
+        supportsAtomicBatch: true,
         supportsIndexes: false,
         supportsQueryPushdown: false,
-        supportsTransactions: false,
+        supportsTransactions: true,
       );
 
   @override
@@ -97,6 +98,31 @@ final class DataLocalMemoryStorage implements DataLocalStorage {
     _requireOpen();
     await _delay();
     _records.remove(collection);
+  }
+
+  @override
+  Future<void> applyBatch(
+    List<DataLocalStorageBatchOperation> operations,
+  ) async {
+    _requireOpen();
+    await _delay();
+    for (final operation in operations) {
+      final record = operation.record;
+      if (record != null) {
+        _records.putIfAbsent(
+          record.collection,
+          () => <String, DataLocalStoredRecord>{},
+        )[record.id] = record
+            .copy();
+      } else {
+        final target = operation.delete!;
+        final collection = _records[target.collection];
+        collection?.remove(target.id);
+        if (collection?.isEmpty ?? false) {
+          _records.remove(target.collection);
+        }
+      }
+    }
   }
 
   @override

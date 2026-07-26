@@ -1,7 +1,8 @@
 # DataLocal query playground
 
-This Flutter application exercises DataLocal 2 against deterministic datasets
-of 10, 1,000, or 10,000 encrypted documents.
+This Flutter application compares the SharedPreferences and SQLite DataLocal
+backends against deterministic datasets of 10, 1,000, or 10,000 encrypted
+documents.
 
 Run it from this directory:
 
@@ -11,10 +12,12 @@ flutter run
 
 Then:
 
-1. choose a dataset size;
-2. wait for chunked batch seeding to finish;
-3. run one scenario or select **Run all queries**;
-4. compare matched counts, returned previews, and elapsed time.
+1. select either **SharedPreferences** or **SQLite**;
+2. choose a dataset size;
+3. wait for chunked batch seeding to finish;
+4. run one scenario or select **Run all queries**;
+5. switch backend, repeat the same seed and scenarios, then compare timings in
+   the retained result cards.
 
 The playground demonstrates:
 
@@ -34,8 +37,10 @@ decoding and AES-GCM decryption when the default application database is used.
 They are diagnostic measurements, not a substitute for a physical-device
 benchmark.
 
-Seeding uses batches of 100 documents. This keeps progress visible and avoids
-creating one oversized recovery journal for the 10,000-document dataset.
+Seeding uses identical batches of 100 documents for both backends.
+SharedPreferences applies records individually behind the logical batch;
+SQLite applies each batch in one native transaction. This keeps the comparison
+honest while avoiding one oversized recovery journal for 10,000 documents.
 
 Build the Android release example with:
 

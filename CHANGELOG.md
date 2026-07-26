@@ -1,3 +1,10 @@
+## 2.0.0
+
+* Release the stable DataLocal 2 document database API.
+* Include encrypted SharedPreferences persistence, atomic storage contracts,
+  reactive queries, migration tooling, and the complete query API introduced
+  during the 2.0 prereleases.
+
 ## 2.0.0-dev.2
 
 * Add `whereNotIn`, `arrayContainsAny`, and explicit null predicates.

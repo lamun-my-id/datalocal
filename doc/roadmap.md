@@ -1,8 +1,8 @@
 # DataLocal roadmap
 
-This roadmap describes the intended direction after `2.0.0-dev.1`. It is a
-planning document, not a compatibility promise. APIs remain subject to change
-until the stable `2.0.0` release.
+This roadmap describes the intended direction after `2.0.0`. It is a planning
+document, not a compatibility promise. Stable APIs follow semantic versioning;
+future integrations may begin as prereleases while their contracts mature.
 
 ## Product position
 

@@ -21,7 +21,7 @@ indexes, joins, cross-process transactions, or query pushdown.
 
 ```yaml
 dependencies:
-  datalocal: ^2.0.0-dev.1
+  datalocal: ^2.0.0
 ```
 
 ## Open an encrypted database

@@ -1,6 +1,6 @@
 # DataLocal 2.0 API
 
-Status: prerelease API for `2.0.0-dev.1`.
+Status: stable API for `2.0.0`.
 
 ## Database
 

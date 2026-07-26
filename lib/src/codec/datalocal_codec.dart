@@ -5,12 +5,16 @@ import 'package:datalocal/src/exceptions/datalocal_exception.dart';
 
 /// Converts application values to and from DataLocal map documents.
 abstract interface class DataLocalCodec<T> {
+  /// Converts [value] into a validated document map.
   Map<String, Object?> encode(T value);
 
+  /// Converts a stored document [data] map into an application value.
   T decode(Map<String, Object?> data);
 }
 
+/// A codec composed from application-provided encode and decode functions.
 final class DataLocalFunctionalCodec<T> implements DataLocalCodec<T> {
+  /// Creates a functional codec with optional document [validator].
   const DataLocalFunctionalCodec({
     required Map<String, Object?> Function(T value) encode,
     required T Function(Map<String, Object?> data) decode,
@@ -54,7 +58,9 @@ final class DataLocalFunctionalCodec<T> implements DataLocalCodec<T> {
   }
 }
 
+/// Identity-style codec for applications that use document maps directly.
 final class DataLocalMapCodec implements DataLocalCodec<Map<String, Object?>> {
+  /// Creates a map codec with optional document [validator].
   const DataLocalMapCodec({
     DataLocalDocumentValidator validator = const DataLocalDocumentValidator(),
   }) : _validator = validator;

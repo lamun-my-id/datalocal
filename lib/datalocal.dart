@@ -1,3 +1,10 @@
+/// Encrypted document-style local persistence for Flutter.
+///
+/// DataLocal provides typed collections, immutable queries, reactive
+/// snapshots, recoverable writes, optional AES-256-GCM encryption, and tools
+/// for migrating DataLocal 1.x data.
+library;
+
 export 'src/codec/datalocal_codec.dart';
 export 'src/document/datalocal_clock.dart';
 export 'src/document/datalocal_document.dart';

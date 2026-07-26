@@ -29,6 +29,7 @@ final class DataLocalDatabase {
          encryption: encryption,
        );
 
+  /// Validated name used to namespace every stored record.
   final String name;
   final DataLocalStorage _storage;
   final DataLocalClock _clock;
@@ -40,10 +41,19 @@ final class DataLocalDatabase {
   bool _isClosing = false;
   Future<void>? _closeFuture;
 
+  /// Whether this database has completed closing.
   bool get isClosed => _isClosed;
+
+  /// Commit events emitted after successful mutations.
   Stream<DataLocalCommitEvent> get changes => _changeHub.events;
+
+  /// Capabilities advertised by the configured storage provider.
   DataLocalStorageCapabilities get storageCapabilities => _storage.capabilities;
 
+  /// Opens a database and performs pending journal recovery.
+  ///
+  /// [encryption] defaults to plaintext storage and must be configured
+  /// explicitly when data-at-rest encryption is required.
   static Future<DataLocalDatabase> open({
     required String name,
     required DataLocalStorage storage,
@@ -74,9 +84,11 @@ final class DataLocalDatabase {
     );
   }
 
+  /// Returns a map-backed collection named [name].
   DataLocalCollection<Map<String, Object?>> mapCollection(String name) =>
       collection<Map<String, Object?>>(name, codec: const DataLocalMapCodec());
 
+  /// Returns a typed collection using [codec] for serialization.
   DataLocalCollection<T> collection<T>(
     String name, {
     required DataLocalCodec<T> codec,
@@ -101,6 +113,7 @@ final class DataLocalDatabase {
     );
   }
 
+  /// Atomically commits the mutations added synchronously by [build].
   Future<void> writeBatch(void Function(DataLocalWriteBatch batch) build) {
     _requireOpen();
     final batch = DataLocalWriteBatch.internal();
@@ -117,6 +130,7 @@ final class DataLocalDatabase {
     });
   }
 
+  /// Drains accepted writes, closes storage and event streams.
   Future<void> close() {
     if (_isClosed) {
       return Future<void>.value();

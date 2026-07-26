@@ -11,20 +11,29 @@ import 'package:pointycastle/pointycastle.dart';
 /// AES-256-GCM authenticated encryption with 96-bit random nonces.
 final class DataLocalAesGcmEncryptionProvider
     implements DataLocalEncryptionProvider {
+  /// Creates an AES-GCM provider backed by [keyProvider].
   DataLocalAesGcmEncryptionProvider({required this.keyProvider, Random? random})
     : _random = random ?? Random.secure();
 
+  /// Required AES-256 key length in bytes.
   static const int keyByteLength = 32;
+
+  /// Random GCM nonce length in bytes.
   static const int nonceByteLength = 12;
+
+  /// Authentication tag length in bytes.
   static const int authenticationTagByteLength = 16;
 
+  /// Provider used to resolve active and historical encryption keys.
   final DataLocalKeyProvider keyProvider;
   final Random _random;
 
   @override
+  /// Algorithm identifier stored in encrypted envelopes.
   String get algorithm => 'AES-256-GCM';
 
   @override
+  /// Encrypts [plainText] and authenticates the supplied record [context].
   Future<DataLocalEncryptedEnvelope> encrypt(
     Uint8List plainText, {
     required DataLocalEncryptionContext context,
@@ -66,6 +75,7 @@ final class DataLocalAesGcmEncryptionProvider
   }
 
   @override
+  /// Authenticates and decrypts [envelope] for the supplied record [context].
   Future<Uint8List> decrypt(
     DataLocalEncryptedEnvelope envelope, {
     required DataLocalEncryptionContext context,

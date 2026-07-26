@@ -9,38 +9,71 @@ import 'package:datalocal/src/query/datalocal_query_snapshot.dart';
 
 const Object _unsetQueryValue = Object();
 
+/// Operators supported by a [DataLocalFilter].
 enum DataLocalFilterOperator {
+  /// Matches a list field that contains the requested value.
   arrayContains,
+
+  /// Matches values equal to the requested value.
   equal,
+
+  /// Matches values greater than the requested value.
   greaterThan,
+
+  /// Matches values greater than or equal to the requested value.
   greaterThanOrEqual,
+
+  /// Matches values less than the requested value.
   lessThan,
+
+  /// Matches values less than or equal to the requested value.
   lessThanOrEqual,
+
+  /// Matches values that differ from the requested value.
   notEqual,
+
+  /// Matches values contained in the requested list.
   whereIn,
 }
 
+/// An immutable field predicate used by [DataLocalQuery].
 final class DataLocalFilter {
+  /// Creates a predicate for [path].
   const DataLocalFilter({
     required this.path,
     required this.operator,
     required this.value,
   });
 
+  /// Field path evaluated by this predicate.
   final DataLocalFieldPath path;
+
+  /// Comparison performed against [value].
   final DataLocalFilterOperator operator;
+
+  /// Operand supplied to [operator].
   final Object? value;
 }
 
+/// An immutable ordering clause used by [DataLocalQuery].
 final class DataLocalOrder {
+  /// Creates an ordering for [path].
   const DataLocalOrder({required this.path, required this.descending});
 
+  /// Field path whose values are compared.
   final DataLocalFieldPath path;
+
+  /// Whether larger values are returned before smaller values.
   final bool descending;
 
+  /// Stable representation embedded in query cursors.
   String get signature => '${path.toString()}:${descending ? 'desc' : 'asc'}';
 }
 
+/// An immutable, lazily executed query over a DataLocal collection.
+///
+/// Filtering and sorting are currently evaluated in memory, so query cost
+/// grows with the collection size.
 final class DataLocalQuery<T> {
   DataLocalQuery._({
     required this._collection,
@@ -52,6 +85,7 @@ final class DataLocalQuery<T> {
        _orders = List<DataLocalOrder>.unmodifiable(orders),
        assert(_limit == null || _limit > 0);
 
+  /// Creates an unfiltered query rooted at [collection].
   factory DataLocalQuery.root(DataLocalCollection<T> collection) =>
       DataLocalQuery<T>._(
         collection: collection,
@@ -67,6 +101,10 @@ final class DataLocalQuery<T> {
   final int? _limit;
   final DataLocalQueryCursor? _startAfter;
 
+  /// Returns a query with one additional predicate for [path].
+  ///
+  /// Exactly one named operator must be supplied. Multiple calls are combined
+  /// with logical AND.
   DataLocalQuery<T> where(
     String path, {
     Object? isEqualTo = _unsetQueryValue,
@@ -116,6 +154,7 @@ final class DataLocalQuery<T> {
     );
   }
 
+  /// Returns a query with [operator] applied to the parsed field [path].
   DataLocalQuery<T> whereField(
     DataLocalFieldPath path, {
     required DataLocalFilterOperator operator,
@@ -127,9 +166,11 @@ final class DataLocalQuery<T> {
     ],
   );
 
+  /// Returns a query ordered by the dot-separated field [path].
   DataLocalQuery<T> orderBy(String path, {bool descending = false}) =>
       orderByField(DataLocalFieldPath.parse(path), descending: descending);
 
+  /// Returns a query ordered by the parsed field [path].
   DataLocalQuery<T> orderByField(
     DataLocalFieldPath path, {
     bool descending = false,
@@ -140,6 +181,7 @@ final class DataLocalQuery<T> {
     ],
   );
 
+  /// Restricts the result to at most [value] documents.
   DataLocalQuery<T> limit(int value) {
     if (value < 1) {
       throw const DataLocalValidationException(
@@ -150,9 +192,11 @@ final class DataLocalQuery<T> {
     return _copy(limit: value);
   }
 
+  /// Returns only documents positioned after [cursor].
   DataLocalQuery<T> startAfter(DataLocalQueryCursor cursor) =>
       _copy(startAfter: cursor);
 
+  /// Executes this query and returns a snapshot of matching documents.
   Future<DataLocalQuerySnapshot<T>> get() async {
     final allDocuments = await _collection.readAllForQuery();
     final matched = allDocuments.where(_matches).toList();
@@ -169,8 +213,10 @@ final class DataLocalQuery<T> {
     );
   }
 
+  /// Returns the number of matching documents before the result limit.
   Future<int> count() async => (await get()).totalCount;
 
+  /// Sums numeric values at [path] in the selected result.
   Future<num> sum(String path) async {
     final snapshot = await get();
     num result = 0;
@@ -188,6 +234,7 @@ final class DataLocalQuery<T> {
     return result;
   }
 
+  /// Returns the mean for numeric values at [path], or `null` when empty.
   Future<double?> average(String path) async {
     final snapshot = await get();
     if (snapshot.documents.isEmpty) {

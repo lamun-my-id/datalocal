@@ -11,7 +11,9 @@ import 'package:datalocal/src/reactive/datalocal_change.dart';
 import 'package:datalocal/src/serialization/datalocal_record_serializer.dart';
 import 'package:datalocal/src/storage/datalocal_storage.dart';
 
+/// A typed set of documents sharing a storage namespace and codec.
 final class DataLocalCollection<T> {
+  /// Creates a collection wired to database internals.
   const DataLocalCollection.internal({
     required this.name,
     required DataLocalCodec<T> codec,
@@ -31,6 +33,7 @@ final class DataLocalCollection<T> {
        _changeHub = changeHub,
        _requireDatabaseOpen = requireDatabaseOpen;
 
+  /// Collection name used as the persistent namespace.
   final String name;
   final DataLocalCodec<T> _codec;
   final DataLocalStorage _storage;
@@ -41,6 +44,9 @@ final class DataLocalCollection<T> {
   final DataLocalChangeHub _changeHub;
   final void Function() _requireDatabaseOpen;
 
+  /// Inserts [value] with an optional caller-supplied [id].
+  ///
+  /// Throws [DataLocalConflictException] when the identifier already exists.
   Future<DataLocalDocument<T>> insert(T value, {String? id}) async {
     _requireDatabaseOpen();
     return _coordinator.synchronized(() async {
@@ -98,12 +104,16 @@ final class DataLocalCollection<T> {
     });
   }
 
+  /// Returns the document identified by [id], or `null` when absent.
   Future<DataLocalDocument<T>?> get(String id) async {
     _requireDatabaseOpen();
     final record = await _storage.read(name, id);
     return record == null ? null : _decode(record);
   }
 
+  /// Returns the document identified by [id].
+  ///
+  /// Throws [DataLocalNotFoundException] when it does not exist.
   Future<DataLocalDocument<T>> require(String id) async {
     final document = await get(id);
     if (document == null) {
@@ -115,6 +125,9 @@ final class DataLocalCollection<T> {
     return document;
   }
 
+  /// Replaces an existing document and increments its revision.
+  ///
+  /// [expectedRevision] enables optimistic concurrency control.
   Future<DataLocalDocument<T>> replace(
     String id,
     T value, {
@@ -139,6 +152,9 @@ final class DataLocalCollection<T> {
     });
   }
 
+  /// Shallow-merges [values] into an existing document.
+  ///
+  /// Nested maps are replaced rather than recursively merged.
   Future<DataLocalDocument<T>> patch(
     String id,
     Map<String, Object?> values, {
@@ -163,6 +179,7 @@ final class DataLocalCollection<T> {
     });
   }
 
+  /// Deletes [id] and returns whether a document existed.
   Future<bool> delete(String id, {int? expectedRevision}) async {
     _requireDatabaseOpen();
     return _coordinator.synchronized(() async {
@@ -181,6 +198,7 @@ final class DataLocalCollection<T> {
     });
   }
 
+  /// Atomically deletes every document in this collection.
   Future<void> clear() async {
     _requireDatabaseOpen();
     await _coordinator.synchronized(() async {
@@ -203,10 +221,13 @@ final class DataLocalCollection<T> {
     });
   }
 
+  /// Creates an immutable query rooted at this collection.
   DataLocalQuery<T> query() => DataLocalQuery<T>.root(this);
 
+  /// Successful commit events that affect this collection.
   Stream<DataLocalCommitEvent> get changes => _changeHub.forCollection(name);
 
+  /// Reads and decodes all documents for query evaluation.
   Future<List<DataLocalDocument<T>>> readAllForQuery() async {
     _requireDatabaseOpen();
     final records = await _storage.readCollection(name);
@@ -217,8 +238,10 @@ final class DataLocalCollection<T> {
     return List<DataLocalDocument<T>>.unmodifiable(result);
   }
 
+  /// Encodes [value] into the map evaluated by the query engine.
   Map<String, Object?> encodeForQuery(T value) => _codec.encode(value);
 
+  /// Prepares an insert for a logical write batch.
   Future<DataLocalStorageMutation> prepareInsertForBatch(
     T value, {
     String? id,
@@ -242,6 +265,7 @@ final class DataLocalCollection<T> {
     return DataLocalStorageMutation.write(await encodeForCommit(document));
   }
 
+  /// Prepares a replacement for a logical write batch.
   Future<DataLocalStorageMutation> prepareReplaceForBatch(
     String id,
     T value, {
@@ -256,6 +280,7 @@ final class DataLocalCollection<T> {
     return DataLocalStorageMutation.write(await encodeForCommit(updated));
   }
 
+  /// Prepares a deletion for a logical write batch.
   Future<DataLocalStorageMutation> prepareDeleteForBatch(
     String id, {
     int? expectedRevision,
@@ -265,6 +290,7 @@ final class DataLocalCollection<T> {
     return DataLocalStorageMutation.delete(collection: name, id: id);
   }
 
+  /// Encodes [document] into its persistent record representation.
   Future<DataLocalStoredRecord> encodeForCommit(
     DataLocalDocument<T> document,
   ) async {

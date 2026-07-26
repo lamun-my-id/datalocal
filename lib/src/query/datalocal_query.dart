@@ -14,6 +14,9 @@ enum DataLocalFilterOperator {
   /// Matches a list field that contains the requested value.
   arrayContains,
 
+  /// Matches a list field containing at least one requested value.
+  arrayContainsAny,
+
   /// Matches values equal to the requested value.
   equal,
 
@@ -32,8 +35,17 @@ enum DataLocalFilterOperator {
   /// Matches values that differ from the requested value.
   notEqual,
 
+  /// Matches fields whose value is `null`.
+  isNull,
+
+  /// Matches fields whose value is not `null`.
+  isNotNull,
+
   /// Matches values contained in the requested list.
   whereIn,
+
+  /// Matches values not contained in the requested list.
+  whereNotIn,
 }
 
 /// An immutable field predicate used by [DataLocalQuery].
@@ -55,10 +67,26 @@ final class DataLocalFilter {
   final Object? value;
 }
 
+/// Controls where null and missing values appear in an ordered query.
+enum DataLocalNullOrder {
+  /// Preserve the natural order: first ascending and last descending.
+  automatic,
+
+  /// Place null and missing values before non-null values.
+  first,
+
+  /// Place null and missing values after non-null values.
+  last,
+}
+
 /// An immutable ordering clause used by [DataLocalQuery].
 final class DataLocalOrder {
   /// Creates an ordering for [path].
-  const DataLocalOrder({required this.path, required this.descending});
+  const DataLocalOrder({
+    required this.path,
+    required this.descending,
+    this.nullOrder = DataLocalNullOrder.automatic,
+  });
 
   /// Field path whose values are compared.
   final DataLocalFieldPath path;
@@ -66,8 +94,12 @@ final class DataLocalOrder {
   /// Whether larger values are returned before smaller values.
   final bool descending;
 
+  /// Placement of null and missing values.
+  final DataLocalNullOrder nullOrder;
+
   /// Stable representation embedded in query cursors.
-  String get signature => '${path.toString()}:${descending ? 'desc' : 'asc'}';
+  String get signature =>
+      '${path.toString()}:${descending ? 'desc' : 'asc'}:${nullOrder.name}';
 }
 
 /// An immutable, lazily executed query over a DataLocal collection.
@@ -80,9 +112,17 @@ final class DataLocalQuery<T> {
     required List<DataLocalFilter> filters,
     required List<DataLocalOrder> orders,
     required this._limit,
-    required this._startAfter,
+    required this._limitToLast,
+    required this._startCursor,
+    required this._startInclusive,
+    required this._endCursor,
+    required this._endInclusive,
+    required List<List<DataLocalFilter>> anyFilterGroups,
   }) : _filters = List<DataLocalFilter>.unmodifiable(filters),
        _orders = List<DataLocalOrder>.unmodifiable(orders),
+       _anyFilterGroups = List<List<DataLocalFilter>>.unmodifiable(
+         anyFilterGroups.map(List<DataLocalFilter>.unmodifiable),
+       ),
        assert(_limit == null || _limit > 0);
 
   /// Creates an unfiltered query rooted at [collection].
@@ -92,14 +132,24 @@ final class DataLocalQuery<T> {
         filters: const <DataLocalFilter>[],
         orders: const <DataLocalOrder>[],
         limit: null,
-        startAfter: null,
+        limitToLast: false,
+        startCursor: null,
+        startInclusive: false,
+        endCursor: null,
+        endInclusive: false,
+        anyFilterGroups: const <List<DataLocalFilter>>[],
       );
 
   final DataLocalCollection<T> _collection;
   final List<DataLocalFilter> _filters;
+  final List<List<DataLocalFilter>> _anyFilterGroups;
   final List<DataLocalOrder> _orders;
   final int? _limit;
-  final DataLocalQueryCursor? _startAfter;
+  final bool _limitToLast;
+  final DataLocalQueryCursor? _startCursor;
+  final bool _startInclusive;
+  final DataLocalQueryCursor? _endCursor;
+  final bool _endInclusive;
 
   /// Returns a query with one additional predicate for [path].
   ///
@@ -114,7 +164,11 @@ final class DataLocalQuery<T> {
     Object? isLessThan = _unsetQueryValue,
     Object? isLessThanOrEqualTo = _unsetQueryValue,
     Object? whereIn = _unsetQueryValue,
+    Object? whereNotIn = _unsetQueryValue,
     Object? arrayContains = _unsetQueryValue,
+    Object? arrayContainsAny = _unsetQueryValue,
+    Object? isNull = _unsetQueryValue,
+    Object? isNotNull = _unsetQueryValue,
   }) {
     final candidates = <(DataLocalFilterOperator, Object?)>[
       if (!identical(isEqualTo, _unsetQueryValue))
@@ -131,8 +185,16 @@ final class DataLocalQuery<T> {
         (DataLocalFilterOperator.lessThanOrEqual, isLessThanOrEqualTo),
       if (!identical(whereIn, _unsetQueryValue))
         (DataLocalFilterOperator.whereIn, whereIn),
+      if (!identical(whereNotIn, _unsetQueryValue))
+        (DataLocalFilterOperator.whereNotIn, whereNotIn),
       if (!identical(arrayContains, _unsetQueryValue))
         (DataLocalFilterOperator.arrayContains, arrayContains),
+      if (!identical(arrayContainsAny, _unsetQueryValue))
+        (DataLocalFilterOperator.arrayContainsAny, arrayContainsAny),
+      if (!identical(isNull, _unsetQueryValue))
+        (DataLocalFilterOperator.isNull, isNull),
+      if (!identical(isNotNull, _unsetQueryValue))
+        (DataLocalFilterOperator.isNotNull, isNotNull),
     ];
     if (candidates.length != 1) {
       throw const DataLocalValidationException(
@@ -140,11 +202,22 @@ final class DataLocalQuery<T> {
         context: <String, Object?>{'field': 'where'},
       );
     }
-    if (candidates.single.$1 == DataLocalFilterOperator.whereIn &&
+    final operator = candidates.single.$1;
+    if ((operator == DataLocalFilterOperator.whereIn ||
+            operator == DataLocalFilterOperator.whereNotIn ||
+            operator == DataLocalFilterOperator.arrayContainsAny) &&
         candidates.single.$2 is! List<Object?>) {
       throw const DataLocalValidationException(
-        'whereIn requires a list value.',
-        context: <String, Object?>{'field': 'whereIn'},
+        'This query operator requires a list value.',
+        context: <String, Object?>{'field': 'where'},
+      );
+    }
+    if ((operator == DataLocalFilterOperator.isNull ||
+            operator == DataLocalFilterOperator.isNotNull) &&
+        candidates.single.$2 != true) {
+      throw const DataLocalValidationException(
+        'Null predicates must be enabled with true.',
+        context: <String, Object?>{'field': 'where'},
       );
     }
     return whereField(
@@ -159,25 +232,55 @@ final class DataLocalQuery<T> {
     DataLocalFieldPath path, {
     required DataLocalFilterOperator operator,
     required Object? value,
-  }) => _copy(
-    filters: <DataLocalFilter>[
-      ..._filters,
-      DataLocalFilter(path: path, operator: operator, value: value),
-    ],
-  );
+  }) {
+    final filter = DataLocalFilter(
+      path: path,
+      operator: operator,
+      value: value,
+    );
+    _validateFilter(filter);
+    return _copy(filters: <DataLocalFilter>[..._filters, filter]);
+  }
+
+  /// Adds an OR group; at least one supplied filter must match.
+  ///
+  /// The group is combined with existing filters and groups using logical AND.
+  DataLocalQuery<T> whereAny(Iterable<DataLocalFilter> filters) {
+    final group = List<DataLocalFilter>.unmodifiable(filters);
+    if (group.isEmpty) {
+      throw const DataLocalValidationException(
+        'whereAny requires at least one filter.',
+        context: <String, Object?>{'field': 'whereAny'},
+      );
+    }
+    for (final filter in group) {
+      _validateFilter(filter);
+    }
+    return _copy(
+      anyFilterGroups: <List<DataLocalFilter>>[..._anyFilterGroups, group],
+    );
+  }
 
   /// Returns a query ordered by the dot-separated field [path].
-  DataLocalQuery<T> orderBy(String path, {bool descending = false}) =>
-      orderByField(DataLocalFieldPath.parse(path), descending: descending);
+  DataLocalQuery<T> orderBy(
+    String path, {
+    bool descending = false,
+    DataLocalNullOrder nullOrder = DataLocalNullOrder.automatic,
+  }) => orderByField(
+    DataLocalFieldPath.parse(path),
+    descending: descending,
+    nullOrder: nullOrder,
+  );
 
   /// Returns a query ordered by the parsed field [path].
   DataLocalQuery<T> orderByField(
     DataLocalFieldPath path, {
     bool descending = false,
+    DataLocalNullOrder nullOrder = DataLocalNullOrder.automatic,
   }) => _copy(
     orders: <DataLocalOrder>[
       ..._orders,
-      DataLocalOrder(path: path, descending: descending),
+      DataLocalOrder(path: path, descending: descending, nullOrder: nullOrder),
     ],
   );
 
@@ -189,12 +292,35 @@ final class DataLocalQuery<T> {
         context: <String, Object?>{'field': 'limit'},
       );
     }
-    return _copy(limit: value);
+    return _copy(limit: value, limitToLast: false);
   }
+
+  /// Restricts the result to the final [value] documents.
+  DataLocalQuery<T> limitToLast(int value) {
+    if (value < 1) {
+      throw const DataLocalValidationException(
+        'Query limit must be at least one.',
+        context: <String, Object?>{'field': 'limitToLast'},
+      );
+    }
+    return _copy(limit: value, limitToLast: true);
+  }
+
+  /// Returns documents positioned at or after [cursor].
+  DataLocalQuery<T> startAt(DataLocalQueryCursor cursor) =>
+      _copy(startCursor: cursor, startInclusive: true);
 
   /// Returns only documents positioned after [cursor].
   DataLocalQuery<T> startAfter(DataLocalQueryCursor cursor) =>
-      _copy(startAfter: cursor);
+      _copy(startCursor: cursor, startInclusive: false);
+
+  /// Returns documents positioned at or before [cursor].
+  DataLocalQuery<T> endAt(DataLocalQueryCursor cursor) =>
+      _copy(endCursor: cursor, endInclusive: true);
+
+  /// Returns only documents positioned before [cursor].
+  DataLocalQuery<T> endBefore(DataLocalQueryCursor cursor) =>
+      _copy(endCursor: cursor, endInclusive: false);
 
   /// Executes this query and returns a snapshot of matching documents.
   Future<DataLocalQuerySnapshot<T>> get() async {
@@ -202,9 +328,15 @@ final class DataLocalQuery<T> {
     final matched = allDocuments.where(_matches).toList();
     _sort(matched);
     final totalCount = matched.length;
-    final afterCursor = _applyCursor(matched);
+    final afterCursor = _applyCursors(matched);
     final selected = _limit == null
         ? afterCursor
+        : _limitToLast
+        ? afterCursor
+              .skip(
+                afterCursor.length > _limit ? afterCursor.length - _limit : 0,
+              )
+              .toList(growable: false)
         : afterCursor.take(_limit).toList(growable: false);
     return DataLocalQuerySnapshot<T>(
       documents: selected,
@@ -294,6 +426,11 @@ final class DataLocalQuery<T> {
         return false;
       }
     }
+    for (final group in _anyFilterGroups) {
+      if (!group.any((filter) => _evaluate(filter.path.read(data), filter))) {
+        return false;
+      }
+    }
     return true;
   }
 
@@ -312,9 +449,36 @@ final class DataLocalQuery<T> {
         _compare(actual, filter.value) <= 0,
       DataLocalFilterOperator.whereIn =>
         (filter.value! as List<Object?>).contains(actual),
+      DataLocalFilterOperator.whereNotIn =>
+        !(filter.value! as List<Object?>).contains(actual),
       DataLocalFilterOperator.arrayContains =>
         actual is List<Object?> && actual.contains(filter.value),
+      DataLocalFilterOperator.arrayContainsAny =>
+        actual is List<Object?> &&
+            (filter.value! as List<Object?>).any(actual.contains),
+      DataLocalFilterOperator.isNull => actual == null,
+      DataLocalFilterOperator.isNotNull => actual != null,
     };
+  }
+
+  void _validateFilter(DataLocalFilter filter) {
+    if ((filter.operator == DataLocalFilterOperator.whereIn ||
+            filter.operator == DataLocalFilterOperator.whereNotIn ||
+            filter.operator == DataLocalFilterOperator.arrayContainsAny) &&
+        filter.value is! List<Object?>) {
+      throw const DataLocalValidationException(
+        'This query operator requires a list value.',
+        context: <String, Object?>{'field': 'filter.value'},
+      );
+    }
+    if ((filter.operator == DataLocalFilterOperator.isNull ||
+            filter.operator == DataLocalFilterOperator.isNotNull) &&
+        filter.value != true) {
+      throw const DataLocalValidationException(
+        'Null predicates must be enabled with true.',
+        context: <String, Object?>{'field': 'filter.value'},
+      );
+    }
   }
 
   void _sort(List<DataLocalDocument<T>> documents) {
@@ -322,9 +486,10 @@ final class DataLocalQuery<T> {
       final leftData = _collection.encodeForQuery(left.data);
       final rightData = _collection.encodeForQuery(right.data);
       for (final order in _orders) {
-        final comparison = _compare(
+        final comparison = _compareForOrder(
           order.path.read(leftData),
           order.path.read(rightData),
+          order,
         );
         if (comparison != 0) {
           return order.descending ? -comparison : comparison;
@@ -334,13 +499,40 @@ final class DataLocalQuery<T> {
     });
   }
 
-  List<DataLocalDocument<T>> _applyCursor(
+  List<DataLocalDocument<T>> _applyCursors(
     List<DataLocalDocument<T>> documents,
   ) {
-    final cursor = _startAfter;
-    if (cursor == null) {
+    final start = _startCursor;
+    final end = _endCursor;
+    if (start == null && end == null) {
       return documents;
     }
+    if (start != null) {
+      _validateCursor(start);
+    }
+    if (end != null) {
+      _validateCursor(end);
+    }
+    return documents
+        .where((document) {
+          if (start != null) {
+            final comparison = _compareDocumentToCursor(document, start);
+            if (_startInclusive ? comparison < 0 : comparison <= 0) {
+              return false;
+            }
+          }
+          if (end != null) {
+            final comparison = _compareDocumentToCursor(document, end);
+            if (_endInclusive ? comparison > 0 : comparison >= 0) {
+              return false;
+            }
+          }
+          return true;
+        })
+        .toList(growable: false);
+  }
+
+  void _validateCursor(DataLocalQueryCursor cursor) {
     final signature = _orders.map((order) => order.signature).toList();
     if (!_listEquals(cursor.orderSignature, signature)) {
       throw const DataLocalValidationException(
@@ -354,9 +546,6 @@ final class DataLocalQuery<T> {
         context: <String, Object?>{'field': 'cursor'},
       );
     }
-    return documents
-        .where((document) => _compareDocumentToCursor(document, cursor) > 0)
-        .toList(growable: false);
   }
 
   int _compareDocumentToCursor(
@@ -366,9 +555,10 @@ final class DataLocalQuery<T> {
     final data = _collection.encodeForQuery(document.data);
     for (var index = 0; index < _orders.length; index++) {
       final order = _orders[index];
-      final comparison = _compare(
+      final comparison = _compareForOrder(
         order.path.read(data),
         cursor.orderValues[index],
+        order,
       );
       if (comparison != 0) {
         return order.descending ? -comparison : comparison;
@@ -421,6 +611,19 @@ final class DataLocalQuery<T> {
     );
   }
 
+  int _compareForOrder(Object? left, Object? right, DataLocalOrder order) {
+    final leftNullish = left == null || left is DataLocalMissingField;
+    final rightNullish = right == null || right is DataLocalMissingField;
+    if (leftNullish != rightNullish &&
+        order.nullOrder != DataLocalNullOrder.automatic) {
+      final desired = order.nullOrder == DataLocalNullOrder.first
+          ? (leftNullish ? -1 : 1)
+          : (leftNullish ? 1 : -1);
+      return order.descending ? -desired : desired;
+    }
+    return _compare(left, right);
+  }
+
   bool _listEquals(List<String> left, List<String> right) {
     if (left.length != right.length) {
       return false;
@@ -435,14 +638,24 @@ final class DataLocalQuery<T> {
 
   DataLocalQuery<T> _copy({
     List<DataLocalFilter>? filters,
+    List<List<DataLocalFilter>>? anyFilterGroups,
     List<DataLocalOrder>? orders,
     int? limit,
-    DataLocalQueryCursor? startAfter,
+    bool? limitToLast,
+    DataLocalQueryCursor? startCursor,
+    bool? startInclusive,
+    DataLocalQueryCursor? endCursor,
+    bool? endInclusive,
   }) => DataLocalQuery<T>._(
     collection: _collection,
     filters: filters ?? _filters,
+    anyFilterGroups: anyFilterGroups ?? _anyFilterGroups,
     orders: orders ?? _orders,
     limit: limit ?? _limit,
-    startAfter: startAfter ?? _startAfter,
+    limitToLast: limitToLast ?? _limitToLast,
+    startCursor: startCursor ?? _startCursor,
+    startInclusive: startInclusive ?? _startInclusive,
+    endCursor: endCursor ?? _endCursor,
+    endInclusive: endInclusive ?? _endInclusive,
   );
 }

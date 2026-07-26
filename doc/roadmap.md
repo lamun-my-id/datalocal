@@ -25,9 +25,9 @@ attacker who fully controls an unlocked device and application process.
 - Document complete examples for CRUD, queries, reactive UI, migration, and
   dependency injection.
 - Publish a query compatibility matrix and explicit null/missing-field rules.
-- Add commonly requested filters such as `arrayContainsAny`, `whereNotIn`,
-  explicit null predicates, and composite `AND`/`OR` groups.
-- Add more cursor boundaries and convenience result methods.
+- Extend composite predicates beyond the initial `whereAny` OR groups when
+  real applications require nested boolean expressions.
+- Add convenience result methods such as `first` and `firstOrNull`.
 
 ### 2.0.0-rc.1: validation and API freeze
 

@@ -71,7 +71,12 @@ final query = notes
     .query()
     .where('author.id', isEqualTo: 'user-1')
     .where('priority', isGreaterThanOrEqualTo: 5)
-    .orderBy('priority', descending: true)
+    .where('tags', arrayContainsAny: ['flutter', 'dart'])
+    .orderBy(
+      'priority',
+      descending: true,
+      nullOrder: DataLocalNullOrder.last,
+    )
     .limit(20);
 ```
 
@@ -79,14 +84,49 @@ Supported operators:
 
 - equal and not equal, including equality with `null`
 - greater/less than and inclusive variants
-- `whereIn`
-- array contains
+- `whereIn` and `whereNotIn`
+- `arrayContains` and `arrayContainsAny`
+- explicit `isNull: true` and `isNotNull: true`
 
-Queries support nested dot paths, explicit `DataLocalFieldPath`, stable sorting,
-`startAfter` cursors, `count`, `sum`, and `average`.
+Chained filters use logical AND. Add an OR group with `whereAny`; the group is
+then combined with the other predicates using AND:
+
+```dart
+final visible = notes.query().whereAny([
+  DataLocalFilter(
+    path: DataLocalFieldPath.parse('ownerId'),
+    operator: DataLocalFilterOperator.equal,
+    value: currentUserId,
+  ),
+  DataLocalFilter(
+    path: DataLocalFieldPath.parse('public'),
+    operator: DataLocalFilterOperator.equal,
+    value: true,
+  ),
+]);
+```
+
+Missing fields do not match filters, including `isNull`, `isNotNull`, and
+`whereNotIn`. This distinguishes an absent value from an explicitly stored
+`null`.
+
+Queries support nested dot paths, explicit `DataLocalFieldPath`, stable
+multi-field sorting, automatic or explicit null placement, and inclusive or
+exclusive cursor boundaries through `startAt`, `startAfter`, `endAt`, and
+`endBefore`. `limit` selects the first page and `limitToLast` selects the final
+page. Aggregates include `count`, `sum`, and `average`.
+
+Cursor signatures include every ordering field, direction, and null-placement
+rule. Reusing a cursor with incompatible ordering throws
+`DataLocalValidationException`.
 
 `get()` returns `DataLocalQuerySnapshot<T>`. `totalCount` is the filtered count
 before cursor/limit; `documents` is the selected page.
+
+Filtering and sorting currently scan and evaluate the collection in memory.
+They do not provide Firestore composite indexes or PostgreSQL query planning;
+use an indexed storage adapter when collection size makes linear scans
+inappropriate.
 
 ## Reactive API
 

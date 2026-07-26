@@ -1,3 +1,10 @@
+## Unreleased
+
+* Add `whereNotIn`, `arrayContainsAny`, and explicit null predicates.
+* Add composable OR groups through `whereAny`; chained filters remain AND.
+* Add `startAt`, `endAt`, `endBefore`, and `limitToLast` pagination.
+* Add explicit first/last placement for null and missing sort values.
+
 ## 2.0.0-dev.1
 
 * Introduce the DataLocal 2 document, collection, query, and typed-codec API.

@@ -46,6 +46,69 @@ void main() {
     expect(selected.documents.map((item) => item.id), <String>['a', 'd']);
   });
 
+  test('supports exclusion, array-any, and explicit null predicates', () async {
+    final excluded = await products
+        .query()
+        .where('category.name', whereNotIn: <Object?>['food'])
+        .get();
+    expect(excluded.documents.map((item) => item.id), <String>['c', 'd']);
+
+    final tagged = await products
+        .query()
+        .where('tags', arrayContainsAny: <Object?>['popular', 'missing'])
+        .get();
+    expect(tagged.documents.map((item) => item.id), <String>['b', 'c']);
+
+    final nullRating = await products
+        .query()
+        .where('rating', isNull: true)
+        .get();
+    expect(nullRating.documents.map((item) => item.id), <String>['a']);
+
+    final rated = await products.query().where('rating', isNotNull: true).get();
+    expect(rated.documents.map((item) => item.id), <String>['b', 'c', 'd']);
+
+    await products.insert(<String, Object?>{
+      'name': 'Missing fields',
+      'tags': <Object?>[],
+    }, id: 'missing');
+    expect(
+      (await products.query().where('rating', isNull: true).get()).documents
+          .map((item) => item.id),
+      <String>['a'],
+    );
+    expect(
+      (await products
+              .query()
+              .where('category.name', whereNotIn: <Object?>['food'])
+              .get())
+          .documents
+          .map((item) => item.id),
+      <String>['c', 'd'],
+    );
+  });
+
+  test('combines OR groups with existing AND filters', () async {
+    final query = products
+        .query()
+        .where('price', isGreaterThanOrEqualTo: 20)
+        .whereAny(<DataLocalFilter>[
+          DataLocalFilter(
+            path: DataLocalFieldPath.parse('name'),
+            operator: DataLocalFilterOperator.equal,
+            value: 'Banana',
+          ),
+          DataLocalFilter(
+            path: DataLocalFieldPath.parse('category.name'),
+            operator: DataLocalFilterOperator.equal,
+            value: 'tech',
+          ),
+        ]);
+
+    final snapshot = await query.get();
+    expect(snapshot.documents.map((item) => item.id), <String>['b', 'c', 'd']);
+  });
+
   test('sorts deterministically and paginates with durable cursors', () async {
     final query = products.query().orderBy('price').limit(2);
     final first = await query.get();
@@ -74,6 +137,65 @@ void main() {
     expect(await query.average('price'), 30);
   });
 
+  test('supports inclusive and exclusive cursor boundaries', () async {
+    final ordered = products.query().orderBy('price');
+    final throughBanana = await ordered.limit(2).get();
+    final throughCable = await ordered.limit(3).get();
+    final banana = throughBanana.cursor!;
+    final cable = throughCable.cursor!;
+
+    expect(
+      (await ordered.startAt(banana).endAt(cable).get()).documents.map(
+        (item) => item.id,
+      ),
+      <String>['b', 'c'],
+    );
+    expect(
+      (await ordered.startAfter(banana).endBefore(cable).get()).documents,
+      isEmpty,
+    );
+  });
+
+  test('supports limitToLast and explicit null ordering', () async {
+    await products.insert(<String, Object?>{
+      'name': 'Earbuds',
+      'price': 30,
+      'category': <String, Object?>{'name': 'tech'},
+      'tags': <Object?>['tech'],
+    }, id: 'e');
+
+    final last = await products.query().orderBy('price').limitToLast(2).get();
+    expect(last.documents.map((item) => item.id), <String>['e', 'd']);
+
+    final nullsLast = await products
+        .query()
+        .orderBy('rating', nullOrder: DataLocalNullOrder.last)
+        .get();
+    expect(nullsLast.documents.map((item) => item.id), <String>[
+      'b',
+      'c',
+      'd',
+      'e',
+      'a',
+    ]);
+
+    final nullsFirstDescending = await products
+        .query()
+        .orderBy(
+          'rating',
+          descending: true,
+          nullOrder: DataLocalNullOrder.first,
+        )
+        .get();
+    expect(nullsFirstDescending.documents.map((item) => item.id), <String>[
+      'a',
+      'e',
+      'c',
+      'd',
+      'b',
+    ]);
+  });
+
   test('rejects invalid operators, limits, cursors, and aggregates', () async {
     expect(
       () => products.query().where('price'),
@@ -84,7 +206,33 @@ void main() {
       throwsA(isA<DataLocalValidationException>()),
     );
     expect(
+      () => products.query().where('price', whereNotIn: 'not-a-list'),
+      throwsA(isA<DataLocalValidationException>()),
+    );
+    expect(
+      () => products.query().where('price', isNull: false),
+      throwsA(isA<DataLocalValidationException>()),
+    );
+    expect(
+      () => products.query().whereAny(const <DataLocalFilter>[]),
+      throwsA(isA<DataLocalValidationException>()),
+    );
+    expect(
+      () => products.query().whereAny(<DataLocalFilter>[
+        DataLocalFilter(
+          path: DataLocalFieldPath.parse('price'),
+          operator: DataLocalFilterOperator.whereIn,
+          value: 'not-a-list',
+        ),
+      ]),
+      throwsA(isA<DataLocalValidationException>()),
+    );
+    expect(
       () => products.query().limit(0),
+      throwsA(isA<DataLocalValidationException>()),
+    );
+    expect(
+      () => products.query().limitToLast(0),
       throwsA(isA<DataLocalValidationException>()),
     );
 

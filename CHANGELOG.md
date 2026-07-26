@@ -1,4 +1,4 @@
-## Unreleased
+## 2.0.0-dev.2
 
 * Add `whereNotIn`, `arrayContainsAny`, and explicit null predicates.
 * Add composable OR groups through `whereAny`; chained filters remain AND.

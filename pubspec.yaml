@@ -1,7 +1,7 @@
 name: datalocal
 description: "Encrypted document-style local persistence for Flutter with queries, reactive snapshots, migration, and recoverable SharedPreferences storage."
 repository: "https://github.com/lamun-my-id/datalocal.git"
-version: 2.0.0-dev.1
+version: 2.0.0-dev.2
 # test    : dart pub publish --dry-run
 # deploy  : dart pub publish
 
